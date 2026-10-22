@@ -98,6 +98,19 @@ https://…"); the workflow, checklist and report template are self-contained.
 Restart the agent (or start a new session). Requirements: `python3` (3.9+) for the collector; no
 packages to install. Update with `git -C <skills-dir>/pwa-review pull`.
 
+## Where it runs
+
+The full audit needs an agent that can **run Python and reach the internet** (the collector
+downloads the page, headers, manifest, service worker and bundles).
+
+| Environment | Support |
+|-------------|---------|
+| Coding agents with a terminal (CLI agents, IDE agents in agent mode) | ✅ Full audit: collector, source scan, evidence-backed report |
+| Chat assistants with a web tool but no shell (e.g. custom GPTs) | ⚠️ Partial: put `SKILL.md` in the instructions/knowledge; sandboxes usually have no internet, so the collector cannot run, and web tools summarise pages — header and code checks are reported as Unverifiable, not guessed |
+| Models without tools | ❌ No audit; paste the page HTML, manifest and SW and ask it to apply the checklist manually |
+
+Unverifiable checks leave the denominator, so a partial run gives a smaller but still honest score.
+
 ## Usage
 
 ```
