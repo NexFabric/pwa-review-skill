@@ -142,6 +142,8 @@ SIGNALS: dict[str, str] = {
     "launch_queue": r"launchQueue",
 }
 
+SW_LITERAL_RX = re.compile(
+    r"""["'`]((?:\.{0,2}/)?(?:[\w.-]+/)*(?:sw|service-?worker|serviceworker|ngsw-worker|firebase-messaging-sw)\.m?js)["'`]""")
 JS_REF_RX = re.compile(r"""["'`]((?:\.{0,2}/)?[\w@./-]+\.m?js)["'`]""")
 
 SOURCE_EXT = {
@@ -323,6 +325,56 @@ def _resolve_ref(ref: str, bundle_url: str, page_url: str) -> str:
 
 def _text(body: bytes) -> str:
     return body.decode("utf-8", errors="replace")
+
+
+# Tailwind light/dark pairing, checked per source line (class lists rarely span
+# lines in JSX; cn()/clsx() splits are a known false-positive source).
+# name -> (unprefixed light-mode token, dark counterpart that pairs it on the same line)
+THEME_PAIR_RULES = {
+    "overlay": (r"(?<![:\w-])bg-black/\d+", r"dark:bg-"),
+    "border": (r"(?<![:\w-])border-white/\d+", r"dark:border-"),
+    "hover": (r"(?<![:\w-])hover:bg-(?:white|black)/\d+", r"dark:hover:bg-"),
+    "gradient": (r"(?<![:\w-])(?:from|via|to)-(?:white|black)/\d+", r"dark:(?:from|via|to)-"),
+    "surface": (r"(?<![:\w-])bg-(?:zinc|gray|slate|neutral|stone)-(?:800|900|950)\b", r"dark:bg-"),
+    "text_white": (r"(?<![:\w-])text-white\b", r"dark:text-|bg-(?:\w+-[5-9]00|gradient|primary|accent|brand|indigo|blue|red|green|emerald|violet|purple|black)"),
+}
+# Scrims behind modals/drawers are meant to stay dark in both themes.
+SCRIM_RX = re.compile(r"\bfixed\b(?=.*\binset-0\b)|backdrop")
+CSS_VAR_SURFACE_RX = re.compile(r"\b(?:bg|text|border)-\[var\(--")
+DROPDOWN_RX = re.compile(r"\babsolute\b(?=.*\b(?:right-0|left-0|end-0)\b)(?=.*\b(?:mt-\d|top-full)\b)(?=.*\bw-(?:\d+|\[))")
+DROPDOWN_SAFE_RX = re.compile(r"\bfixed\b|max-sm:|sm:absolute|md:absolute")
+UI_EXT = {".tsx", ".jsx", ".vue", ".svelte", ".astro", ".html"}
+
+
+def source_audit(corpus: dict[str, str]) -> dict:
+    pairs = {k: {"total": 0, "unpaired": 0, "samples": []} for k in THEME_PAIR_RULES}
+    compiled = {k: (re.compile(a), re.compile(b)) for k, (a, b) in THEME_PAIR_RULES.items()}
+    dd = {"candidates": 0, "mobile_safe": 0, "samples": []}
+    css_var_tokens = 0
+    for fname, text in corpus.items():
+        if not fname.startswith("source/") or Path(fname).suffix.lower() not in UI_EXT:
+            continue
+        for no, line in enumerate(text.splitlines(), 1):
+            css_var_tokens += len(CSS_VAR_SURFACE_RX.findall(line))
+            scrim = bool(SCRIM_RX.search(line))
+            for k, (tok, pair) in compiled.items():
+                n = len(tok.findall(line))
+                if not n:
+                    continue
+                pairs[k]["total"] += n
+                if k == "overlay" and scrim:
+                    continue
+                if not pair.search(line):
+                    pairs[k]["unpaired"] += n
+                    if len(pairs[k]["samples"]) < 5:
+                        pairs[k]["samples"].append(f"{fname}:{no}")
+            if DROPDOWN_RX.search(line):
+                dd["candidates"] += 1
+                if DROPDOWN_SAFE_RX.search(line):
+                    dd["mobile_safe"] += 1
+                elif len(dd["samples"]) < 5:
+                    dd["samples"].append(f"{fname}:{no}")
+    return {"theme_pairs": pairs, "dropdowns": dd, "css_var_theme_tokens": css_var_tokens}
 
 
 def scan_signals(corpus: dict[str, str]) -> dict:
@@ -552,18 +604,39 @@ def collect_url(url: str, out: Path, fetcher: Fetcher, max_bundles: int,
         if m and not m.group(1).startswith("$"):
             sw_url, sw_source = urljoin(base, m.group(1)), fname
             break
+    # Minified registrations pass the path through a variable (workbox-window,
+    # vite-plugin-pwa), so also try SW-named path literals found in client code.
+    registration_seen = any(re.search(SIGNALS["sw_register"], text) for text in corpus.values())
     probes = []
+
+    def _try_sw(u: str, via: str) -> bool:
+        r = fetcher.get(u)
+        body = r.get("body", b"")
+        ok = (r.get("status") == 200 and "html" not in _ctype(r)
+              and (b"addEventListener" in body or b"importScripts" in body or b"workbox" in body))
+        probes.append({"url": u, "via": via, "status": r.get("status"), "content_type": _ctype(r),
+                       "looks_like_sw": ok})
+        return ok
+
     if not sw_url:
-        for path in SW_PROBE_PATHS:
-            u = urljoin(base, path)
-            r = fetcher.get(u)
-            body = r.get("body", b"")
-            ok = (r.get("status") == 200 and "html" not in _ctype(r)
-                  and (b"addEventListener" in body or b"importScripts" in body))
-            probes.append({"url": u, "status": r.get("status"), "content_type": _ctype(r), "looks_like_sw": ok})
-            if ok:
-                sw_url, sw_source = u, "probe"
+        tried: set[str] = set()
+        for fname, text in corpus.items():
+            for lit in SW_LITERAL_RX.findall(text):
+                u = urljoin(base, lit)
+                if u in tried or not _same_origin(u, base) or len(tried) >= 3:
+                    continue
+                tried.add(u)
+                if _try_sw(u, fname):
+                    sw_url, sw_source = u, f"{fname} (path literal)"
+                    break
+            if sw_url or len(tried) >= 3:
                 break
+        for path in SW_PROBE_PATHS:
+            if sw_url:
+                break
+            u = urljoin(base, path)
+            if u not in tried and _try_sw(u, "probe"):
+                sw_url, sw_source = u, "probe"
     summary["service_worker"] = None
     if sw_url:
         # The bundle crawler may have picked up the SW file by its string reference;
@@ -573,7 +646,8 @@ def collect_url(url: str, out: Path, fetcher: Fetcher, max_bundles: int,
                 corpus.pop(b["file"], None)
                 b["is_service_worker"] = True
         r = fetcher.get(sw_url)
-        info = {"url": sw_url, "found_via": sw_source, "status": r.get("status"), "content_type": _ctype(r),
+        info = {"url": sw_url, "found_via": sw_source, "registration_seen": registration_seen,
+                "status": r.get("status"), "content_type": _ctype(r),
                 "cache_control": (r.get("headers") or {}).get("cache-control"),
                 "service_worker_allowed": (r.get("headers") or {}).get("service-worker-allowed"),
                 "error": r.get("error"), "imports": []}
@@ -636,6 +710,8 @@ def main(argv: list[str]) -> int:
             ap.error(f"--source is not a directory: {src}")
         summary["source"] = {"path": str(src), "files_scanned": collect_source(src, corpus)}
 
+    if args.source:
+        summary["source_audit"] = source_audit(corpus)
     signals = scan_signals(corpus)
     summary["signals"] = {k: sum(h["count"] for h in v) for k, v in signals.items()}
     summary["requests"] = fetcher.count

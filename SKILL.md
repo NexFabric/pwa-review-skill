@@ -7,7 +7,7 @@ allowed-tools: Bash(python3:*), Bash(curl:*), Read, Grep, Glob, WebFetch
 
 <pwa-review>
 
-# PWA Review Skill (v6.0.1)
+# PWA Review Skill (v6.1.0)
 
 Audits a Progressive Web App across 11 categories (209 nominal points) and grades it on the
 **points that actually apply** to that app. Lighthouse removed its PWA category in v12 (2024);
@@ -106,9 +106,13 @@ weighted rows (≥ 2 points) and for anything you will report as a finding.
 `sw.js` / `sw-import-*` (or the SW source file in source mode). Client-side rows (update prompt,
 sync registration, storage, install UI) must be evidenced in `bundles/*`, inline scripts or source.
 
-**Source mode:** with `--source`, also Grep the project directly for rows that are about code
-structure (dropdown positioning, theme pairs, view-state persistence, reconnection on `connect`).
-Minified bundles rarely show those reliably; prefer source evidence when both exist.
+**Source mode:** with `--source`, `summary.source_audit` pre-computes Tailwind theme pairs
+(`theme_pairs.*`: total / unpaired / `file:line` samples), dropdown positioning (`dropdowns`) and
+CSS-variable theming (`css_var_theme_tokens`). These are line-based heuristics: treat counts as
+leads, open 2–3 samples before scoring, and judge intent (always-dark hero, brand-coloured button).
+Also Grep the project for view-state persistence and reconnection on `connect`. Minified bundles
+rarely show these reliably; prefer source evidence when both exist. Without `--source`, the theme
+and dropdown rows are Unverifiable unless the app ships no dark mode / no menus (then N/A).
 
 ### Step 3: Score
 
@@ -166,7 +170,7 @@ Signal names (`sig:`) refer to `summary.json → signals` / `signals.json`.
 
 | Check | Pts | How to verify |
 |-------|----:|---------------|
-| SW registered by the page | 2 | `sig:sw_register` in inline/bundle/source; `service_worker.found_via` ≠ `probe`. Probe-only = 1 with a note "registration not seen in fetched code" (it may live in a lazy chunk the collector did not reach; 2 if source mode confirms it) |
+| SW registered by the page | 2 | `service_worker.registration_seen` true (registration code in inline/bundle/source; minified workbox-window passes the path in a variable, so `found_via` may say `(path literal)`). `found_via: probe` with `registration_seen` false = 1, note "registration not seen in fetched code" (2 if source mode confirms it) |
 | `install` handler | 3 | `sig:sw_install` in SW files |
 | `activate` handler | 3 | `sig:sw_activate` in SW files |
 | `fetch` handler that responds | 4 | `sig:sw_fetch` **and** `sig:sw_respond_with` (or Workbox `registerRoute`). A fetch listener that never calls `respondWith` is a no-op: 0 points + warning (it slows every navigation) |
@@ -291,14 +295,14 @@ verifiable. Use the `<meta http-equiv>` equivalents where they exist.
 | Reduced motion respected | 1 | `sig:reduced_motion` |
 | Overscroll control | 1 | `sig:overscroll` on scroll containers / body in standalone mode |
 | Colour-scheme signals | 1 | `sig:color_scheme` (`<meta name="color-scheme">` / CSS `color-scheme`), or theme-color `<meta>` with `media` variants |
-| Mobile dropdown positioning | 2 | N/A group. `fixed` on mobile, `absolute` from `sm:` up, viewport margins (`sig:fixed_dropdown_mobile` or source) |
+| Mobile dropdown positioning | 2 | N/A group. `source_audit.dropdowns`: `mobile_safe` = `candidates` → 2; some → 1; none → 0. Open 2 `samples` to confirm they are menus that can overflow a phone screen (URL-only mode: Unverifiable) |
 | Dropdown safe-area handling | 1 | N/A group. dropdowns apply `safe-area-inset-left/right` |
-| Theme consistency | 2 | N/A group. UI surfaces have light + dark variants (Tailwind `dark:` or CSS variables per scheme) |
-| Overlay pairs | 1 | N/A group. `bg-black/X` overlays have a light counterpart |
-| Border pairs | 1 | N/A group. `border-white/X` has a light alternative |
-| Hover pairs | 1 | N/A group. hover backgrounds defined for both themes |
-| Gradient pairs | 1 | N/A group. gradient stops have both variants |
-| Contextual `text-white` | 1 | N/A group. white text only on solid coloured backgrounds |
+| Theme consistency | 2 | N/A group. `source_audit.theme_pairs.surface` unpaired = 0, or the app themes through CSS variables (`css_var_theme_tokens` high) and the unpaired samples are intentional (always-dark splash/hero). Verified light-mode breakage → 0 |
+| Overlay pairs | 1 | N/A group. `theme_pairs.overlay.unpaired` = 0 (full-screen scrims `fixed inset-0` / `backdrop` are exempt — they stay dark in both themes) |
+| Border pairs | 1 | N/A group. `theme_pairs.border.unpaired` = 0, or samples sit on always-dark sections |
+| Hover pairs | 1 | N/A group. `theme_pairs.hover.unpaired` = 0, or samples sit on always-dark/coloured sections |
+| Gradient pairs | 1 | N/A group. `theme_pairs.gradient.unpaired` = 0, or samples are image scrims |
+| Contextual `text-white` | 1 | N/A group. `theme_pairs.text_white` unpaired lines are on solid coloured backgrounds (check 3 samples; the heuristic only sees same-line backgrounds) |
 | SPA view-state persistence | 2 | N/A group. Active view / tab / conversation id persisted (`sig:localstorage_set`, URL state or history state) and stale ids handled |
 
 ### Category 9: SEO & Discoverability (8 points)
@@ -439,7 +443,7 @@ platform it does not target.
 <details><summary>Machine-readable summary</summary>
 
 ```json
-{"version":"6.0.1","target":"…","date":"…","earned":0,"applicable":0,"nominal":209,
+{"version":"6.1.0","target":"…","date":"…","earned":0,"applicable":0,"nominal":209,
  "percent":0,"grade":"…","provisional":false,
  "categories":{"manifest":[0,22],"advanced_manifest":[0,15],"service_worker":[0,35],
  "offline":[0,24],"installability":[0,15],"security":[0,16],"performance":[0,19],
@@ -448,7 +452,7 @@ platform it does not target.
 ```
 </details>
 
-*Generated by PWA Review Skill v6.0.1*
+*Generated by PWA Review Skill v6.1.0*
 ```
 
 Category arrays are `[earned, applicable]`. Keep the JSON block so audits can be diffed over time.
@@ -464,7 +468,7 @@ Category arrays are `[earned, applicable]`. Keep the JSON block so audits can be
 | No manifest linked | Cat 1 = 0/22, Cat 2 = 0/15, CRITICAL |
 | Manifest 404 / invalid JSON | Same as above; quote `json_error` |
 | No service worker | Cat 3 = 0/35, Cat 4 = 0/24, Cat 5 fetch row = 0, CRITICAL |
-| SW found only by path probe | Score it, but flag "registration not seen" (it may be stale or unused) |
+| SW found only by path probe | Score it; if `registration_seen` is false, flag "registration not seen" (it may be stale or unused) |
 | Bundles not fetchable (CDN on another origin) | Client-code rows → Unverifiable unless `--source` evidence exists |
 | SSR shell with little HTML | Rely on bundles/source; do not fail landmarks/ARIA from an empty shell alone |
 

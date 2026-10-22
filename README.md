@@ -8,7 +8,22 @@ Lighthouse removed its PWA category in v12 (2024). This skill fills that gap and
 Lighthouse never covered: iOS/Safari behaviour, update UX, storage durability, real-time
 reconnection, Chromium manifest capabilities and response-header security.
 
-## What's new in v6.0.1
+## What's new in v6.1.0
+
+- **Source audit for theming and menus:** with `--source`, the collector counts Tailwind
+  light/dark pairs (overlay, border, hover, gradient, surface, `text-white`) and dropdown
+  positioning per line, with `file:line` samples; full-screen scrims are exempt and CSS-variable
+  theming is detected. These rows no longer need manual grepping.
+- **Service worker discovery for minified registrations:** workbox-window and vite-plugin-pwa
+  pass the SW path through a variable; the collector now follows SW-named path literals and
+  reports `registration_seen`, so these apps are no longer marked "registration not seen".
+- **Collector fixes (6.0.1):** bundler chunk paths resolve against the app base (no more
+  `/assets/js/assets/js/…` 404s), a reserved request budget for the SW and `robots.txt`, Firebase
+  `vapidKey` push detection, and test files are skipped in source mode.
+- Verified against live apps built with Vite + Workbox, vite-plugin-pwa, Angular, Next.js and a
+  custom service worker, plus an unreachable host.
+
+## What's new in v6.0.0
 
 - **Evidence collector** (`scripts/collect.py`, Python stdlib only): raw HTML + response headers,
   HTTP→HTTPS redirect and compression probes, manifest + icon reachability, service worker
@@ -150,4 +165,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Version:** 6.0.1 · **Author:** [@emrahub](https://github.com/emrahub)
+**Version:** 6.1.0 · **Author:** [@emrahub](https://github.com/emrahub)

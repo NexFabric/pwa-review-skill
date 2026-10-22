@@ -1,5 +1,26 @@
 # Changelog
 
+## [6.1.0] - 2026-10-22
+
+### Added
+- `summary.source_audit` (source mode): Tailwind theme-pair counts per rule (`overlay`, `border`,
+  `hover`, `gradient`, `surface`, `text_white`) with unpaired totals and `file:line` samples,
+  dropdown positioning (`candidates`, `mobile_safe`, samples) and `css_var_theme_tokens`.
+  Full-screen scrims (`fixed inset-0`, `backdrop`) are exempt from the overlay rule.
+- Service worker discovery follows SW-named path literals in client code (minified
+  workbox-window / vite-plugin-pwa registrations) before probing common paths;
+  `service_worker.registration_seen` records whether registration code was found.
+
+### Changed
+- SKILL.md: theme and dropdown rows score from `source_audit` and require checking samples;
+  without `--source` they are Unverifiable. SW registration row uses `registration_seen`.
+
+### Verified
+- Live runs: Vite + custom SW, vite-plugin-pwa (Workbox), Next.js, Angular (SPA catch-all
+  correctly rejected as SW), a redirecting host, and an unreachable host.
+
+---
+
 ## [6.0.1] - 2026-10-22
 
 ### Fixed

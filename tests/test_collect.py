@@ -112,6 +112,11 @@ class SourceModeTest(unittest.TestCase):
                 "document.addEventListener('visibilitychange', () => s.connect());\n")
             (src / "node_modules" / "x" / "i.js").write_text("navigator.setAppBadge(1)")
             (src / "src" / "push.ts").write_text("getToken(messaging, { vapidKey: KEY })")
+            (src / "src" / "Menu.tsx").write_text(
+                '<div className="bg-black/60 dark:bg-black/60 border-white/10">\n'
+                '<div className="absolute right-0 mt-2 w-56">\n'
+                '<div className="fixed inset-0 bg-black/50 text-[var(--text)]">\n'
+                '<div className="fixed left-4 right-4 sm:absolute sm:right-0 mt-2 w-56">\n')
             (src / "src" / "socket.test.ts").write_text("navigator.share({})")
             (src / "tests").mkdir()
             (src / "tests" / "e2e.ts").write_text("navigator.share({})")
@@ -120,7 +125,16 @@ class SourceModeTest(unittest.TestCase):
                 collect.main(["--source", str(src), "--out", str(out)])
             summary = json.loads((out / "summary.json").read_text())
             self.assertEqual(summary["mode"], "source")
-            self.assertEqual(summary["source"]["files_scanned"], 2)
+            self.assertEqual(summary["source"]["files_scanned"], 3)
+            audit = summary["source_audit"]
+            self.assertEqual(audit["theme_pairs"]["overlay"], {"total": 2, "unpaired": 0, "samples": []})
+            self.assertEqual(audit["theme_pairs"]["border"]["unpaired"], 1)
+            self.assertEqual(audit["theme_pairs"]["border"]["samples"], ["source/src/Menu.tsx:1"])
+            self.assertEqual(audit["dropdowns"]["candidates"], 2)
+            self.assertEqual(audit["dropdowns"]["mobile_safe"], 1)
+            self.assertEqual(audit["dropdowns"]["samples"], ["source/src/Menu.tsx:2"])
+            self.assertEqual(audit["theme_pairs"]["overlay"]["total"], 2)  # scrim counted, not flagged
+            self.assertEqual(audit["css_var_theme_tokens"], 1)
             self.assertGreater(summary["signals"]["push_subscribe"], 0)
             self.assertEqual(summary["signals"]["web_share"], 0)
             self.assertGreater(summary["signals"]["reconnect_cfg"], 0)
