@@ -1,312 +1,153 @@
 # PWA Review Skill for Claude Code
 
-A comprehensive Progressive Web App audit skill that goes beyond standard Lighthouse testing. Analyzes PWAs across **11 categories** with a **192-point scoring system**, including real-time connection resilience, advanced features, and iOS-specific compatibility checks that typical audits miss.
+An evidence-based Progressive Web App audit that goes beyond Lighthouse. It scores **11 categories
+(209 nominal points)**, grades only the checks that apply to your app, and backs every finding
+with a file, line, header or manifest key.
 
-## Features
+Lighthouse removed its PWA category in v12 (2024). This skill fills that gap and adds what
+Lighthouse never covered: iOS/Safari behaviour, update UX, storage durability, real-time
+reconnection, Chromium manifest capabilities and response-header security.
 
-- **192-point scoring system** across 11 categories
-- **Beyond Lighthouse**: Checks advanced PWA features like `handle_links`, `launch_handler`, `file_handlers`, `protocol_handlers`
-- **iOS Compatibility**: Safe area handling, splash screens, touch events, notch/Dynamic Island support
-- **Core Web Vitals signals**: LCP, INP, and CLS optimization detection
-- **Enhanced Security**: HSTS, CSP, Permissions-Policy, COOP/COEP checks
-- **Install Experience**: beforeinstallprompt and custom install UI detection
-- **Update UX**: Service worker update notification patterns
-- **Actionable reports**: Each issue includes specific fix recommendations
-- **No dependencies**: Runs natively in Claude Code using WebFetch
+## What's new in v6.0.0
 
-## Categories Evaluated
+- **Evidence collector** (`scripts/collect.py`, Python stdlib only): raw HTML + response headers,
+  HTTP→HTTPS redirect and compression probes, manifest + icon reachability, service worker
+  discovery (registration code, then common paths) with `importScripts`, up to 25 JS bundles and
+  10 stylesheets, `robots.txt`, and ~65 code signals with `file:line` evidence. Security headers
+  are now verified instead of "not detectable from HTML".
+- **Three modes:** live URL, local source tree (`--source`), or both.
+- **Fair scoring:** N/A rules (no dark mode, no real-time, no third-party scripts, …) and
+  Unverifiable checks leave the denominator; the grade is the percentage of applicable points.
+- **20+ new checks:** zoom not disabled (WCAG 1.4.4), `dvh` units, reduced motion, overscroll,
+  bfcache, modern image formats, no-op fetch handler detection, response guard before caching,
+  SW `Cache-Control`, SPA navigation fallback, iOS install guidance, standalone detection,
+  HTTP→HTTPS redirect, strict CSP, clickjacking protection, indexability, Badging and Web Share.
+- **Corrected platform facts:** Chrome no longer needs a fetch handler for menu install, Safari
+  storage quota is ~60% of disk (not 50 MB), `persist()` exists in Safari, Declarative Web Push
+  (Safari 18.4), iOS 26 home-screen behaviour, `gcm_sender_id` is obsolete, COEP is not a default
+  recommendation, `onTouchEnd` backups cause double-fire.
+- **Report:** evidence on every finding, fix line, effort estimate, platform notes, and a JSON
+  block for tracking scores over time. Written in the user's language.
 
-| Category | Points | What It Checks |
-|----------|--------|----------------|
-| Manifest Compliance | 20 | Required manifest fields (name, icons, display, colors) |
-| Advanced Manifest | 15 | Screenshots, shortcuts, i18n, maskable icons, widgets, iOS splash screens |
-| Service Worker & Caching | 33 | Registration, events, cache strategies, message handler, expiration config |
-| Offline Capability | 24 | Fallback pages, app shell, sync triggers, IndexedDB, real-time resilience |
-| Installability | 13 | HTTPS, manifest link, beforeinstallprompt, custom install UI |
-| Security | 16 | CSP, SRI, HTTPS, COOP/COEP, HSTS, Permissions-Policy |
-| Performance Signals | 17 | Render-blocking, lazy loading, resource hints, Network Info API, compression |
-| UX & Accessibility | 29 | Viewport, safe areas, touch events, semantic HTML, ARIA, SPA state persistence |
-| SEO & Discoverability | 7 | Meta tags, Open Graph, structured data |
-| PWA Advanced | 17 | Cutting-edge PWA capabilities, Web Push |
-| iOS Compatibility | 1 | Bonus for complete iOS meta tag set |
+See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
-## Grading Scale
+## Categories
 
-| Grade | Score Range | Percentage |
-|-------|-------------|------------|
-| A+ | 173+ points | 90%+ |
-| A | 154-172 points | 80-89% |
-| B | 135-153 points | 70-79% |
-| C | 116-134 points | 60-69% |
-| D | 77-115 points | 40-59% |
-| F | <77 points | <40% |
+| Category | Points | What it checks |
+|----------|-------:|----------------|
+| Manifest Compliance | 22 | Required fields, manifest and icons actually reachable |
+| Advanced Manifest | 15 | Screenshots with form factors, shortcuts, id, scope, maskable icon, iOS splash |
+| Service Worker & Caching | 35 | Lifecycle, real fetch handling, strategies, expiration, cache hygiene |
+| Offline Capability | 24 | Offline + navigation fallback, update UX, storage, sync, real-time resilience |
+| Installability | 15 | Chromium criteria, install prompt UI, iOS install guidance |
+| Security | 16 | HTTPS redirect, CSP strictness, HSTS, nosniff, Referrer/Permissions-Policy, COOP, framing |
+| Performance Signals | 19 | Render blocking, LCP/INP/CLS signals, compression, bfcache, image formats |
+| UX & Accessibility | 35 | Viewport, zoom, safe areas, a11y, `dvh`, motion, dropdowns, theming, view state |
+| SEO & Discoverability | 8 | Title, description, Open Graph, canonical, JSON-LD, indexability |
+| PWA Advanced | 19 | launch/file/protocol handlers, share target, push, badging, Web Share |
+| iOS Compatibility | 1 | Bonus for the complete iOS meta set |
+
+**Grade** = earned ÷ applicable points: A+ ≥ 90% · A 80–89% · B 70–79% · C 60–69% · D 40–59% · F < 40%.
+With every check applicable: A+ 189+, A 168–188, B 147–167, C 126–146, D 84–125, F < 84.
 
 ## Installation
 
-### Method 1: Add to Claude Code Skills (Recommended)
+Claude Code loads skills from **directories** (`<skills-dir>/<name>/SKILL.md`). A loose
+`pwa-review.md` file in `~/.claude/skills/` is not picked up.
 
-1. Copy the `SKILL.md` file to your Claude Code skills directory:
-   ```bash
-   # macOS/Linux
-   cp SKILL.md ~/.claude/skills/pwa-review.md
+```bash
+# Personal (all projects)
+git clone https://github.com/NexFabric/pwa-review-skill.git ~/.claude/skills/pwa-review
 
-   # Or create a custom skills folder
-   mkdir -p ~/.claude/skills
-   cp SKILL.md ~/.claude/skills/pwa-review.md
-   ```
-
-2. Restart Claude Code or reload skills
-
-### Method 2: Project-Level Skill
-
-Add `SKILL.md` to your project's `.claude/` directory:
-
+# Project-level
+git clone https://github.com/NexFabric/pwa-review-skill.git .claude/skills/pwa-review
 ```
-your-project/
-├── .claude/
-│   └── skills/
-│       └── pwa-review.md
-└── ...
-```
+
+Restart Claude Code (or start a new session). Requirements: `python3` (3.9+) for the collector;
+no packages to install. Update with `git -C ~/.claude/skills/pwa-review pull`.
 
 ## Usage
 
-Once installed, invoke the skill with:
-
 ```
-/pwa-review https://your-pwa-url.com
-```
-
-### Example
-
-```
-/pwa-review https://looknex.com
+/pwa-review https://your-pwa.com
+/pwa-review https://your-pwa.com ~/code/your-app     # live site + source evidence
+/pwa-review ./your-app                               # source only, before deploying
 ```
 
-Claude will:
-1. Fetch the HTML from the URL
-2. Discover manifest and service worker locations
-3. Analyze both files against the 192-point checklist
-4. Generate a detailed report with scores and recommendations
+Claude runs the collector into a temporary evidence folder, confirms signals at `file:line`,
+scores each row, and prints the report. You can also run the collector yourself:
 
-## Sample Output
+```bash
+python3 ~/.claude/skills/pwa-review/scripts/collect.py https://your-pwa.com --out /tmp/pwa-ev
+python3 ~/.claude/skills/pwa-review/scripts/collect.py --source ./your-app --out /tmp/pwa-src
+```
+
+## Sample output
+
+- [Well-built PWA (A+)](examples/sample_report.md) — illustrative, url+source mode
+- [Static page, not a PWA (F)](examples/sample_report_bad.md) — from a real run against example.com
 
 ```markdown
-# PWA Audit Report
+**Score:** 186/206 applicable points (90.3%) — **Grade: A+**
+**Nominal:** 186/209 · N/A: 3 pts · Unverifiable: 0 pts
 
-**URL:** https://example.com
-**Date:** 2026-02-07
-**Overall Score:** 165/178 (93%) — Grade: A+
-
-## Score Breakdown
-
-| Category | Score | Status |
-|----------|-------|--------|
-| Manifest Compliance | 20/20 | ✅ |
-| Advanced Manifest | 15/15 | ✅ |
-| Service Worker & Caching | 27/29 | ✅ |
-| Offline Capability | 17/17 | ✅ |
-| Installability | 13/13 | ✅ |
-| Security | 14/16 | ⚠️ |
-| Performance Signals | 16/16 | ✅ |
-| UX & Accessibility | 25/27 | ✅ |
-| SEO & Discoverability | 5/7 | ⚠️ |
-| PWA Advanced | 12/17 | ⚠️ |
-| iOS Compatibility | 1/1 | ✅ |
-
-## Critical Issues
-- None
-
-## Warnings
-- Missing Content Security Policy
-- Missing canonical URL
-- No file_handlers defined
-
-## Recommendations
-...
+- **[UX] Zoom disabled** — `index.html:6` `maximum-scale=1, user-scalable=no`
+  **Fix:** `width=device-width, initial-scale=1, viewport-fit=cover`
 ```
 
-## What Makes This Different from Lighthouse
+## What this covers that Lighthouse does not
 
-| Feature | Lighthouse | PWA Review Skill |
-|---------|------------|------------------|
-| `handle_links` check | ❌ | ✅ |
-| `launch_handler` analysis | ❌ | ✅ |
-| `file_handlers` validation | ❌ | ✅ |
-| `protocol_handlers` check | ❌ | ✅ |
-| `share_target` analysis | ❌ | ✅ |
-| `edge_side_panel` support | ❌ | ✅ |
-| `scope_extensions` check | ❌ | ✅ |
-| `note_taking` (ChromeOS) | ❌ | ✅ |
-| `widgets` (Windows 11) | ❌ | ✅ |
-| `skipWaiting`/`clients.claim` | ❌ | ✅ |
-| Navigation preload | ❌ | ✅ |
-| Stale-while-revalidate | ❌ | ✅ |
-| `beforeinstallprompt` | ❌ | ✅ |
-| Push/notificationclick | ❌ | ✅ |
-| **iOS Safe Area checks** | ❌ | ✅ |
-| **iOS Splash Screens** | ❌ | ✅ |
-| **Touch Event handling** | ❌ | ✅ |
-| **Update UX patterns** | ❌ | ✅ |
-| **Visibility change reconnection** | ❌ | ✅ |
-| **Real-time reconnection strategy** | ❌ | ✅ |
-| **Room re-subscribe on reconnect** | ❌ | ✅ |
-| **SPA view state persistence** | ❌ | ✅ |
-| Cache strategy analysis | Basic | Detailed |
-| iOS-specific guidance | Limited | **Comprehensive** |
+| Area | Lighthouse 12+ | PWA Review Skill |
+|------|:--------------:|:----------------:|
+| PWA category / installability audit | removed | ✅ |
+| Manifest + icon reachability, `id`, screenshots form factors | ❌ | ✅ |
+| `launch_handler`, `file_handlers`, `protocol_handlers`, `share_target`, `handle_links` | ❌ | ✅ |
+| SW lifecycle, no-op fetch handler, strategies, expiration, response guard | ❌ | ✅ |
+| Update UX (prompt, `SKIP_WAITING`, no repeat prompt) | ❌ | ✅ |
+| Offline + SPA navigation fallback | ❌ | ✅ |
+| Storage durability (`persist`, `estimate`, IndexedDB) | ❌ | ✅ |
+| Real-time reconnection (visibility, backoff, room re-join) | ❌ | ✅ |
+| iOS: safe areas, splash, install guidance, tap reliability, `dvh` | ❌ | ✅ |
+| Response-header security (HSTS, CSP strictness, COOP, framing) | partial | ✅ |
+| Lab performance metrics (LCP/INP/CLS numbers) | ✅ | signals only — run Lighthouse/CrUX for numbers |
 
-## v5.5.0 New Features (Real-Time Connection Resilience)
+The skill does not execute JavaScript or measure runtime performance. Pair it with Lighthouse or
+PageSpeed Insights for lab/field metrics and with Chrome DevTools → Application for a live check.
 
-### Real-Time Connection Resilience (+5 points in Offline Capability)
-- **Visibility change reconnection** (+2 pts) — Detects `visibilitychange` listener for WebSocket reconnection on tab return
-- **Real-time reconnection strategy** (+2 pts) — Detects proper `reconnectionAttempts` (>5 or Infinity) with progressive backoff
-- **Connection room re-subscribe** (+1 pt) — Detects persistent `connect` listener for room re-join after reconnection
+## Repository layout
 
-### SPA State Persistence (+2 points in UX & Accessibility)
-- **SPA view state persistence** (+2 pts) — Detects localStorage persistence for active view/conversation IDs with stale ID handling
+```
+SKILL.md                     workflow, scoring checklist, report template
+scripts/collect.py           evidence collector (stdlib only)
+references/platform-notes.md iOS / Safari / Chromium caveats (read on demand)
+references/fix-recipes.md    copy-ready fixes for common findings
+examples/                    sample reports
+tests/                       collector tests against a local fixture PWA
+```
 
-These checks address real-world mobile PWA UX bugs where backgrounding kills WebSocket connections and SPA navigation destroys user state.
-
-## v5.4.0 New Features (Sync Integration & Adaptive Performance)
-
-### Service Worker & Caching Enhancements (+4 points)
-- **Multiple caching strategies** (+2 pts) — Detects usage of different strategies (CacheFirst, NetworkFirst, StaleWhileRevalidate) for different resource types
-- **Cache expiration config** (+1 pt) — Detects `maxEntries` or `maxAgeSeconds` for cache pruning
-- **SW message handler** (+1 pt) — Detects `addEventListener('message', ...)` for client-SW communication
-
-### Offline Capability Enhancements (+2 points)
-- **Background sync client trigger** (+1 pt) — Detects `registration.sync.register()` call when coming back online
-- **Periodic sync registration** (+1 pt) — Detects `registration.periodicSync.register()` on app initialization
-
-### Performance Signals Enhancement (+1 point)
-- **Network Information API** (+1 pt) — Detects `navigator.connection` for adaptive behavior on slow networks
-
-These checks address real-world gaps discovered during LookNex PWA deep dive analysis.
-
-## v5.3.0 New Features (Offline Storage & Performance)
-
-### Offline Storage Enhancements (+3 points in Offline Capability)
-- **Persistent storage request** (+1 pt) — Detects `navigator.storage.persist()` for iOS data persistence
-- **IndexedDB offline storage** (+1 pt) — Detects `indexedDB.open()` or `idb` library for structured offline data
-- **Storage quota monitoring** (+1 pt) — Detects `navigator.storage.estimate()` for storage health checks
-
-### Performance Optimizations (+2 points in Performance Signals)
-- **Compression headers** (+1 pt) — Note about `Content-Encoding: gzip/br` verification
-- **Bundle chunking strategy** (+1 pt) — Detects `manualChunks`, vendor splitting patterns
-
-These checks address production PWA requirements discovered during LookNex implementation.
-
-## v5.2.0 New Features (Extended Theme Checks)
-
-### Extended Theme Patterns (+5 points in UX)
-- **Dark overlay theme pairs** (+1 pt) — Detects `bg-black/X` patterns without `dark:` prefix
-- **Border visibility pairs** (+1 pt) — Detects `border-white/X` without light alternative
-- **Hover state theme pairs** (+1 pt) — Detects hover backgrounds missing dual variants
-- **Gradient theme support** (+1 pt) — Detects gradient stops without theme variants
-- **Contextual text-white** (+1 pt) — Detects white text on non-colored backgrounds
-
-These checks address common issues where alpha/opacity-based colors work in dark mode but fail in light mode.
-
-## v5.1.0 Features (Mobile UX & State Management)
-
-### Mobile Dropdown Positioning (+3 points in UX)
-- `fixed sm:absolute` positioning pattern detection
-- Viewport-relative vs container-relative positioning check
-- `safe-area-inset-right/left` margin detection for dropdowns
-
-### Update State Management (+2 points in Offline)
-- localStorage flag detection for update state persistence (e.g., `pwa-just-updated`)
-- Double-fire prevention for touch event handlers
-
-### Theme Consistency (+2 points in UX)
-- Light/dark theme variant detection for UI elements
-- Hardcoded color warning (e.g., `bg-zinc-900` without `dark:` counterpart)
-
-## v5.0.0 Features (iOS & Mobile Focus)
-
-### iOS Safe Area Support (+4 points in UX)
-- `viewport-fit=cover` check for notch/Dynamic Island support
-- `env(safe-area-inset-*)` CSS usage detection
-- Fixed header/footer safe area handling
-
-### iOS Splash Screens (+2 points in Advanced Manifest)
-- `<link rel="apple-touch-startup-image">` detection
-- Multiple device size coverage check
-
-### Touch Event Handling (+1 point in UX)
-- `onTouchEnd` handler detection for iOS compatibility
-- `touch-manipulation` CSS property check
-
-### Update UX (+2 points in Offline)
-- Service worker update notification patterns
-- Graceful update flow detection
-
-### Enhanced iOS/Safari Documentation
-- Comprehensive safe area guidance
-- Touch event best practices
-- Splash screen requirements
-- Z-index considerations for iOS
-
-## Previous Versions
-
-<details>
-<summary>v4.0.0 Changes</summary>
-
-### Service Worker & Caching (+6 points)
-- `skipWaiting()` instant activation
-- `clients.claim()` immediate control
-- Navigation preload
-- Stale-while-revalidate pattern
-- Push event handler
-- notificationclick handler
-
-### Installability (+3 points)
-- `beforeinstallprompt` handling
-- Custom install UI detection
-
-### Security (+4 points)
-- HSTS header
-- X-Content-Type-Options
-- Referrer-Policy
-- Permissions-Policy
-
-### Performance Signals (+4 points)
-- LCP optimization signals
-- INP optimization signals
-- CLS prevention
-- Critical CSS inlined
-
-### UX & Accessibility (+2 points)
-- Focus indicators visible
-- Skip to main content link
-
-### Advanced Manifest (+2 points)
-- `note_taking` (ChromeOS)
-- `widgets` (Windows 11)
-
-### PWA Advanced (+2 points)
-- Web Push configured
-- Notification permission UX
-
-</details>
+Run the tests: `python3 -m unittest discover -s tests`
 
 ## Contributing
 
-Contributions welcome! Please submit issues and PRs to improve the checklist or add new checks.
+Issues and PRs welcome. When adding a check: add the row to `SKILL.md` (keep the category totals
+in the overview table in sync), add a signal to `scripts/collect.py` if it is detectable from code,
+cover it in `tests/`, and record it in `CHANGELOG.md`.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
 
 ## Resources
 
-- [Web App Manifest | web.dev](https://web.dev/add-manifest/)
-- [Service Workers | MDN](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
-- [PWA Checklist | web.dev](https://web.dev/pwa-checklist/)
-- [Workbox | Google](https://developer.chrome.com/docs/workbox/)
-- [Safe Area Insets | WebKit](https://webkit.org/blog/7929/designing-websites-for-iphone-x/)
+- [Learn PWA | web.dev](https://web.dev/learn/pwa/)
+- [Progressive web apps | MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
+- [Web app manifest | MDN](https://developer.mozilla.org/en-US/docs/Web/Manifest)
+- [Service Worker API | MDN](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
+- [Workbox](https://developer.chrome.com/docs/workbox/)
+- [Revisiting Chrome's installability criteria](https://developer.chrome.com/blog/update-install-criteria)
+- [Updates to Storage Policy | WebKit](https://webkit.org/blog/14403/updates-to-storage-policy/)
+- [Meet Declarative Web Push | WebKit](https://webkit.org/blog/16535/meet-declarative-web-push/)
 
 ---
 
-**Version:** 5.5.0
-**Author:** [@emrahub](https://github.com/emrahub)
+**Version:** 6.0.0 · **Author:** [@emrahub](https://github.com/emrahub)

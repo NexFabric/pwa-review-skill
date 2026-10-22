@@ -1,5 +1,59 @@
 # Changelog
 
+## [6.0.0] - 2026-10-22
+
+### Breaking
+- **Scoring moved to 209 nominal points, graded on applicable points.** N/A groups (real-time,
+  dark-mode pairs, dropdowns, touch double-fire, SRI, SPA view state, `note_taking`) and
+  Unverifiable checks leave the denominator; grade = earned ÷ applicable. Scores are not
+  comparable with v5 reports.
+- Category totals: Manifest 20→22, Service Worker 33→35, Installability 13→15,
+  Performance 17→19, UX 29→35, SEO 7→8, PWA Advanced 17→19 (Advanced Manifest 15, Offline 24,
+  Security 16, iOS 1 unchanged).
+- Frontmatter uses Claude Code fields (`argument-hint`, `allowed-tools`); the unsupported
+  `user_invocable` / `args` keys were removed.
+
+### Added
+- `scripts/collect.py` evidence collector (stdlib only): raw HTML + headers, HTTP→HTTPS and
+  compression probes, manifest and icon reachability, SW discovery via registration code or
+  common paths, `importScripts`, two-level same-origin bundle crawl, stylesheets, `robots.txt`,
+  ~65 code signals with `file:line` snippets. Source mode (`--source`) scans a local project.
+- `references/platform-notes.md` (iOS/Safari/Chromium caveats) and `references/fix-recipes.md`
+  (copy-ready fixes), read on demand.
+- Tests against a local fixture PWA (`python3 -m unittest discover -s tests`).
+- New checks — Manifest: manifest reachable/valid (+1), icons reachable (+1). Advanced manifest:
+  `start_url` inside `scope` (replaces `widgets`). Service worker: response guard before caching
+  (+1), SW script not long-cached (+1), precache revisioning (replaces "Workbox bonus").
+  Offline: SPA navigation fallback (+1). Installability: iOS install guidance (+1), standalone
+  detection (+1). Security: HTTP→HTTPS redirect (replaces duplicate HTTPS row), strict CSP
+  partial credit, clickjacking protection (COEP no longer scored). Performance: bfcache
+  friendliness (+1), modern image formats (+1). UX: zoom not disabled (+2), dynamic viewport units
+  (+1), reduced motion (+1), overscroll control (+1), colour-scheme signals (+1); touch double-fire
+  moved here from Offline. SEO: indexability (+1). PWA Advanced: Badging API (+1), Web Share
+  API (+1).
+- Report: evidence on every finding, fix line, effort, N/A/Unverifiable lines, platform notes,
+  machine-readable JSON block, written in the user's language.
+
+### Changed
+- Fetch handler that never calls `respondWith` scores 0 (no-op handlers slow navigation).
+- Screenshots: full credit needs a `wide` and a narrow form factor.
+- "Touch event handling for iOS" became "Tap reliability" (`<button>`/`cursor: pointer`,
+  `touch-action: manipulation`); `onTouchEnd` backups are no longer recommended.
+- Web Push: VAPID `applicationServerKey` or Declarative Web Push; `gcm_sender_id` no longer counts.
+- ARIA presence 2→1 point; `handle_links` documented as experimental.
+- README installation fixed: skills are directories (`~/.claude/skills/pwa-review/SKILL.md`).
+- Example reports rewritten in the v6 format; the failing example comes from a real run.
+
+### Fixed
+- Error handling referenced "Advanced Manifest 0/13" (category is 15 points).
+- Example usage said "10 categories" (there are 11).
+- Outdated platform facts: Safari storage quota (~60% of disk, not 50 MB), `persist()` exists in
+  Safari 15.2+, Chrome menu install no longer needs a fetch handler (108/112), Lighthouse 12
+  removed the PWA category, socket.io v4 defaults to unlimited reconnection attempts, iOS 26 opens
+  every home-screen site as a web app.
+
+---
+
 ## [5.5.0] - 2026-02-28
 
 ### Added

@@ -1,257 +1,95 @@
-# PWA Review Report
+# PWA Audit Report
 
-**URL:** http://example.com
-**Date:** 2026-02-04 12:40 UTC
-**Overall Score:** 3/160 (2%) — Grade: F (Not a Functional PWA)
+**Target:** https://example.com · **Mode:** url
+**Date:** 2026-10-22 · **Evidence:** `/tmp/pwa-example.com/`
+**Score:** 40/195 applicable points (20.5%) — **Grade: F**
+**Nominal:** 40/209 · N/A: 14 pts · Unverifiable: 0 pts
 
-## Score Overview
+> Generated from a real collector run against example.com, a static documentation page that is
+> not meant to be a PWA. It shows how the skill reports a site with no manifest and no service
+> worker, and how N/A rules keep irrelevant checks out of the denominator.
 
-```
-Overall: [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3/160
-```
+---
 
-| Category | Score | Bar |
-|----------|-------|-----|
-| Manifest Compliance | 0/20 (0%) | `[░░░░░░░░░░] 0/20` |
-| Advanced Manifest | 0/15 (0%) | `[░░░░░░░░░░] 0/15` |
-| Service Worker & Caching | 0/28 (0%) | `[░░░░░░░░░░] 0/28` |
-| Offline Capability | 0/12 (0%) | `[░░░░░░░░░░] 0/12` |
-| Installability | 0/13 (0%) | `[░░░░░░░░░░] 0/13` |
-| Security | 0/16 (0%) | `[░░░░░░░░░░] 0/16` |
-| Performance Signals | 3/14 (21%) | `[██░░░░░░░░] 3/14` |
-| UX & Accessibility | 0/17 (0%) | `[░░░░░░░░░░] 0/17` |
-| SEO & Discoverability | 0/7 (0%) | `[░░░░░░░░░░] 0/7` |
-| PWA Advanced | 0/17 (0%) | `[░░░░░░░░░░] 0/17` |
-| iOS Compatibility | 0/1 (0%) | `[░░░░░░░░░░] 0/1` |
+## Score Breakdown
 
-## Critical Findings
+| Category | Score | Applicable | % | Status |
+|----------|------:|-----------:|--:|:------:|
+| Manifest Compliance | 0 | /22 | 0% | ❌ |
+| Advanced Manifest | 0 | /14 | 0% | ❌ |
+| Service Worker & Caching | 0 | /35 | 0% | ❌ |
+| Offline Capability | 0 | /19 | 0% | ❌ |
+| Installability | 3 | /15 | 20% | ❌ |
+| Security | 2 | /14 | 14% | ❌ |
+| Performance Signals | 13 | /19 | 68% | ⚠️ |
+| UX & Accessibility | 20 | /29 | 69% | ⚠️ |
+| SEO & Discoverability | 2 | /8 | 25% | ❌ |
+| PWA Advanced | 0 | /19 | 0% | ❌ |
+| iOS Compatibility | 0 | /1 | 0% | ❌ |
 
-These issues **block** PWA functionality or installability:
+**N/A:** real-time resilience (5) — no WebSocket/SSE code · SRI (2) — no third-party scripts ·
+mobile dropdowns (3) — no menus · touch double-fire (1) — no touch handlers · SPA view state (2) —
+static single page · `note_taking` (1) — not a notes app
 
-- **[Manifest]** No manifest.json found
-  - PWA requires a valid web app manifest
-- **[Service Worker]** No service worker registration in HTML
-- **[Service Worker]** No service worker found
-- **[Installability]** No <link rel='manifest'> in HTML
-- **[Installability]** Not HTTPS — install blocked
-- **[Security]** Not HTTPS — all PWA features require secure origin
-- **[Security]** 3 mixed content references (http://)
-  - Blocked by browsers, breaks SW
-- **[Performance]** 3 render-blocking scripts
-- **[Performance]** Missing viewport meta tag
-- **[UX & A11y]** No responsive viewport
+---
+
+## Critical Issues
+
+- **[Manifest] No web app manifest linked** — `summary.html.links` has no `manifest`.
+  **Fix:** add `<link rel="manifest" href="/manifest.webmanifest">` with name, icons (192, 512), start_url, display.
+- **[Service Worker] No service worker** — no registration in `index.html` or `bundles/01-s.js`; all probes (`/sw.js`, `/service-worker.js`, …) returned 404.
+  **Fix:** register a SW with an install/activate/fetch lifecycle (see `references/fix-recipes.md`).
+- **[Installability] Not installable** — follows from the two issues above.
 
 ## Warnings
 
-These items need improvement:
+- **[Security] HTTP is not redirected to HTTPS** — `http_redirect.status` 200, no `Location`. **Fix:** 301/308 redirect to `https://`.
+- **[Security] No HSTS, CSP, nosniff, Referrer-Policy, Permissions-Policy, COOP or frame protection** — `headers.json` only carries `content-type`, `content-encoding`, `alt-svc`. **Fix:** add the header set from `fix-recipes.md`.
+- **[UX] No landmarks** — `landmarks.main` = 0. **Fix:** wrap content in `<main>`.
+- **[UX] No `viewport-fit=cover` / safe-area CSS** — matters only once the page runs standalone.
+- **[SEO] No meta description, Open Graph or canonical.**
 
-- **[Offline]** No offline fallback page
-- **[Offline]** No app shell caching detected
-- **[Offline]** No offline/online state indicator
-- **[Offline]** No update prompt shown to user
-- **[Offline]** No graceful update flow
-- **[Installability]** No SW fetch handler — may block install
-- **[Installability]** No apple-touch-icon — generic iOS icon
-- **[Installability]** No beforeinstallprompt handling
-- **[Installability]** No custom install UI
-- **[Security]** No CSP meta tag detected
-  - CSP via HTTP header is preferred and not detectable from HTML alone.
-- **[Security]** 3 external resources without SRI
-- **[Security]** No COOP/COEP headers
-- **[Security]** No Referrer-Policy
-- **[Performance]** No async/defer
-- **[Performance]** No resource hints
-- **[Performance]** No LCP optimization
-- **[Performance]** No CLS prevention (images missing dimensions)
-- **[Performance]** No critical CSS inlined
-- **[UX & A11y]** No semantic HTML landmarks
-- **[UX & A11y]** No ARIA attributes
-- **[UX & A11y]** Missing lang on <html>
-- **[UX & A11y]** No <meta name='theme-color'>
-- **[UX & A11y]** No focus indicators
-- **[UX & A11y]** No skip to main content link
-- **[UX & A11y]** No viewport-fit=cover — iPhone notch/Dynamic Island not handled
-- **[UX & A11y]** No safe area CSS — fixed elements may be obscured
-- **[UX & A11y]** No touch event handlers — iOS PWA buttons may not respond
-- **[iOS Compatibility]** Missing apple-mobile-web-app-capable
-- **[iOS Compatibility]** Missing apple-mobile-web-app-status-bar-style
-- **[iOS Compatibility]** Missing mobile-web-app-capable
+## Passed Highlights
 
-## Notes
-
-- **[Advanced Manifest]** Skipped — no manifest available
-- **[Advanced Manifest]** No iOS splash screens configured
-- **[Offline]** No static asset caching in SW
-- **[Installability]** No custom install prompt (browser default)
-- **[UX & A11y]** No iOS status bar styling
-
-## iOS/Safari Specific Notes
-
-This site has **no iOS PWA support**:
-- No safe area handling — content will be obscured by notch/Dynamic Island
-- No touch event optimizations — buttons may fail to respond in PWA mode
-- No splash screens — users see blank white screen on launch
-- No iOS meta tags — won't behave as a native-like app
-
-## Prioritized Recommendations
-
-### High Priority (Blockers)
-
-1. **No manifest.json found** (Manifest)
-   - PWA requires a valid web app manifest
-   - **How to fix:** Create a `manifest.json` and add `<link rel="manifest" href="/manifest.json">` in your HTML `<head>`.
-2. **No service worker registration in HTML** (Service Worker)
-   - **How to fix:** Register a service worker:
-```js
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js");
-}
-```
-3. **No service worker found** (Service Worker)
-   - **How to fix:** Register a service worker:
-```js
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js");
-}
-```
-4. **No <link rel='manifest'> in HTML** (Installability)
-   - **How to fix:** Add `<link rel="manifest" href="/manifest.json">` in `<head>`.
-5. **Not HTTPS — install blocked** (Installability)
-   - **How to fix:** Serve your site over HTTPS. Use Let's Encrypt for free TLS certificates.
-6. **Not HTTPS — all PWA features require secure origin** (Security)
-   - **How to fix:** Serve your site over HTTPS. Use Let's Encrypt for free TLS certificates.
-7. **3 mixed content references (http://)** (Security)
-   - Blocked by browsers, breaks SW
-   - **How to fix:** Replace all `http://` references with `https://` in src, href, and action attributes.
-8. **3 render-blocking scripts** (Performance)
-   - **How to fix:** Add `async`, `defer`, or `type="module"` to `<script>` tags in `<head>`.
-9. **Missing viewport meta tag** (Performance)
-   - **How to fix:** Add `<meta name="viewport" content="width=device-width, initial-scale=1">` in `<head>`.
-10. **No responsive viewport** (UX & A11y)
-   - **How to fix:** Add `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` in `<head>`.
-
-### Medium Priority (Improvements)
-
-1. **No offline fallback page** (Offline)
-   - **How to fix:** Cache an offline page and serve on fetch fail:
-```js
-.catch(() => caches.match("/offline.html"))
-```
-2. **No app shell caching detected** (Offline)
-3. **No offline/online state indicator** (Offline)
-   - **How to fix:** Detect offline state:
-```js
-window.addEventListener("offline", () => showBanner("You are offline"));
-window.addEventListener("online", () => hideBanner());
-```
-4. **No update prompt shown to user** (Offline)
-   - **How to fix:** Show update notification when SW updates:
-```js
-registration.addEventListener('updatefound', () => {
-  showNotification('New version available! Click to update.');
-});
-```
-5. **No SW fetch handler — may block install** (Installability)
-   - **How to fix:** Add fetch handler:
-```js
-self.addEventListener("fetch", e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-});
-```
-6. **No apple-touch-icon — generic iOS icon** (Installability)
-   - **How to fix:** Add `<link rel="apple-touch-icon" href="/apple-touch-icon.png">` (180×180px).
-7. **No beforeinstallprompt handling** (Installability)
-   - **How to fix:** Add install prompt handler:
-```js
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  showInstallButton();
-});
-```
-8. **No CSP meta tag detected** (Security)
-   - **How to fix:** Add CSP meta tag:
-```html
-<meta http-equiv="Content-Security-Policy"
-  content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
-```
-Or better: set via HTTP header.
-9. **3 external resources without SRI** (Security)
-   - **How to fix:** Add integrity to external scripts:
-```html
-<script src="https://cdn.example.com/lib.js"
-  integrity="sha384-..." crossorigin="anonymous"></script>
-```
-Generate hashes at https://www.srihash.org/
-10. **No async/defer** (Performance)
-   - **How to fix:** Add `async`, `defer`, or `type="module"` to `<script>` tags in `<head>`.
-11. **No resource hints** (Performance)
-   - **How to fix:** Add resource hints:
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preload" href="/critical.css" as="style">
-```
-12. **No semantic HTML landmarks** (UX & A11y)
-   - **How to fix:** Use semantic elements: `<header>`, `<nav>`, `<main>`, `<footer>`, `<article>`, `<section>`.
-13. **No ARIA attributes** (UX & A11y)
-   - **How to fix:** Add ARIA: `role="navigation"`, `aria-label="..."`, `aria-hidden="true"` where needed.
-14. **Missing lang on <html>** (UX & A11y)
-   - **How to fix:** Add language: `<html lang="en">` (use your BCP-47 language code).
-15. **No <meta name='theme-color'>** (UX & A11y)
-   - **How to fix:** Add `<meta name="theme-color" content="#your-color">` in `<head>`. Separate from manifest theme_color.
-16. **No focus indicators** (UX & A11y)
-   - **How to fix:** Ensure `:focus` styles are visible. Don't use `outline: none` without providing alternative focus styles.
-17. **No skip to main content link** (UX & A11y)
-   - **How to fix:** Add skip link as first focusable element:
-```html
-<a href="#main" class="skip-link">Skip to main content</a>
-```
-18. **No viewport-fit=cover** (UX & A11y - iOS)
-   - **How to fix:** Update viewport meta for safe area access:
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-```
-19. **No safe area CSS** (UX & A11y - iOS)
-   - **How to fix:** Add safe area padding to fixed/sticky elements:
-```css
-.fixed-header {
-  padding-top: env(safe-area-inset-top);
-}
-.fixed-footer {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-```
-20. **No iOS meta tags** (iOS Compatibility)
-   - **How to fix:** Add iOS-specific meta tags:
-```html
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-```
-
-### Quick Wins
-
-These fixes take less than 5 minutes each:
-
-1. No manifest.json found → Create a `manifest.json` and add `<link rel="manifest" href="/manifest.json">` in your HTML `<head>`.
-2. No <link rel='manifest'> in HTML → Add `<link rel="manifest" href="/manifest.json">` in `<head>`.
-3. Not HTTPS — install blocked → Serve your site over HTTPS. Use Let's Encrypt for free TLS certificates.
-4. Not HTTPS — all PWA features require secure origin → Serve your site over HTTPS. Use Let's Encrypt for free TLS certificates.
-5. 3 mixed content references (http://) → Replace all `http://` references with `https://` in src, href, and action attributes.
-
-## Reference Links
-
-- **Installability**: https://web.dev/learn/pwa/installation/
-- **Manifest**: https://web.dev/add-manifest/
-- **Offline**: https://web.dev/learn/pwa/offline-data/
-- **Performance**: https://web.dev/learn/performance/
-- **Security**: https://web.dev/articles/csp
-- **Service Worker**: https://web.dev/learn/pwa/service-workers/
-- **UX & A11y**: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Best_practices
-- **PWA Checklist**: https://web.dev/articles/pwa-checklist
-- **Lighthouse**: https://developer.chrome.com/docs/lighthouse
-- **iOS Safe Areas**: https://webkit.org/blog/7929/designing-websites-for-iphone-x/
+- HTTPS with HTTP/3 advertised (`alt-svc: h3`), Brotli compression (`compression: br`)
+- `<html lang="en">`, responsive viewport, zoom not disabled
+- Native light/dark via `color-scheme: light dark` and `light-dark()` (`index.html:1`)
+- Tiny inline critical CSS, script at end of body (no render-blocking), no `unload` listener
 
 ---
-*Generated by PWA Review Skill v5.0.0*
+
+## Recommendations
+
+### High Priority
+1. Add a manifest with required fields and icons — +22 pts — S
+2. Add a service worker with offline fallback — up to +54 pts — M
+3. Redirect HTTP→HTTPS and add HSTS — +3 pts — S
+
+### Medium Priority
+1. Security header set (CSP, nosniff, Referrer-Policy, Permissions-Policy, COOP, frame-ancestors) — +8 pts — S
+2. `<main>` landmark, meta description, Open Graph, canonical — +7 pts — S
+
+### Quick Wins
+- `viewport-fit=cover` + `env(safe-area-inset-*)`
+- `apple-touch-icon` and the iOS meta set
+
+## Platform Notes
+- Chrome can install a site from the menu without a fetch handler (Chrome 108+/112+), but the automatic prompt and any offline use still need a service worker.
+
+---
+
+<details><summary>Machine-readable summary</summary>
+
+```json
+{"version":"6.0.0","target":"https://example.com","date":"2026-10-22","earned":40,"applicable":195,"nominal":209,
+ "percent":20.5,"grade":"F","provisional":false,
+ "categories":{"manifest":[0,22],"advanced_manifest":[0,14],"service_worker":[0,35],
+ "offline":[0,19],"installability":[3,15],"security":[2,14],"performance":[13,19],
+ "ux":[20,29],"seo":[2,8],"advanced":[0,19],"ios":[0,1]},
+ "na":["realtime","sri","dropdowns","touch_double_fire","spa_view_state","note_taking"],"unverifiable":[],
+ "critical":["no_manifest","no_service_worker","not_installable"],
+ "warnings":["no_https_redirect","no_security_headers","no_landmarks","no_safe_area","seo_meta"]}
+```
+</details>
+
+*Generated by PWA Review Skill v6.0.0*

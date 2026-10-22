@@ -1,198 +1,98 @@
-# PWA Review Report
+# PWA Audit Report
 
-**URL:** https://example.com
-**Date:** 2026-02-04 14:30 UTC
-**Overall Score:** 148/160 (93%) — Grade: A+ (Excellent PWA)
+**Target:** https://app.example.com + `~/code/example-app` · **Mode:** url+source
+**Date:** 2026-10-22 · **Evidence:** `/tmp/pwa-app.example.com/`
+**Score:** 186/206 applicable points (90.3%) — **Grade: A+**
+**Nominal:** 186/209 · N/A: 3 pts · Unverifiable: 0 pts
 
-## Score Overview
+> Illustrative report for a fictional, well-built React + Workbox PWA with real-time chat.
+> File names and lines show the evidence format the skill requires.
 
-```
-Overall: [█████████████████████████████░░] 148/160
-```
+---
 
-| Category | Score | Bar |
-|----------|-------|-----|
-| Manifest Compliance | 20/20 (100%) | `[██████████] 20/20` |
-| Advanced Manifest | 15/15 (100%) | `[██████████] 15/15` |
-| Service Worker & Caching | 26/28 (93%) | `[█████████░] 26/28` |
-| Offline Capability | 12/12 (100%) | `[██████████] 12/12` |
-| Installability | 13/13 (100%) | `[██████████] 13/13` |
-| Security | 12/16 (75%) | `[███████░░░] 12/16` |
-| Performance Signals | 14/14 (100%) | `[██████████] 14/14` |
-| UX & Accessibility | 17/17 (100%) | `[██████████] 17/17` |
-| SEO & Discoverability | 6/7 (86%) | `[████████░░] 6/7` |
-| PWA Advanced | 12/17 (71%) | `[███████░░░] 12/17` |
-| iOS Compatibility | 1/1 (100%) | `[██████████] 1/1` |
+## Score Breakdown
+
+| Category | Score | Applicable | % | Status |
+|----------|------:|-----------:|--:|:------:|
+| Manifest Compliance | 22 | /22 | 100% | ✅ |
+| Advanced Manifest | 13 | /14 | 93% | ✅ |
+| Service Worker & Caching | 33 | /35 | 94% | ✅ |
+| Offline Capability | 22 | /24 | 92% | ✅ |
+| Installability | 14 | /15 | 93% | ✅ |
+| Security | 11 | /14 | 79% | ⚠️ |
+| Performance Signals | 18 | /19 | 95% | ✅ |
+| UX & Accessibility | 33 | /35 | 94% | ✅ |
+| SEO & Discoverability | 7 | /8 | 88% | ✅ |
+| PWA Advanced | 12 | /19 | 63% | ⚠️ |
+| iOS Compatibility | 1 | /1 | 100% | ✅ |
+
+**N/A:** SRI (2) — all scripts are first-party · `note_taking` (1) — not a notes app
+
+---
+
+## Critical Issues
+
+None.
 
 ## Warnings
 
-These items need improvement:
+- **[UX] Zoom disabled** — `index.html:6` `maximum-scale=1, user-scalable=no` (fails WCAG 1.4.4 on Android).
+  **Fix:** `width=device-width, initial-scale=1, viewport-fit=cover`; keep inputs at 16px to avoid iOS focus zoom.
+- **[Security] CSP allows inline scripts** — header `script-src 'self' 'unsafe-inline'`.
+  **Fix:** move the inline bootstrap to a file or use a nonce; drop `'unsafe-inline'`.
+- **[Security] No `Permissions-Policy`, no `frame-ancestors` / `X-Frame-Options`** — `headers.json`.
+  **Fix:** `Permissions-Policy: camera=(), microphone=(), geolocation=()` and `frame-ancestors 'none'` in CSP.
+- **[Service Worker] SW script cached for an hour** — `service_worker.cache_control` = `max-age=3600`.
+  **Fix:** serve `/sw.js` with `Cache-Control: no-cache`.
+- **[Installability] No iOS install guidance** — `sig:ios_install_hint` = 0; iOS has no install prompt API.
+  **Fix:** show "Share → Add to Home Screen" when iOS and not standalone.
 
-- **[Security]** No CSP meta tag detected
-  - CSP via HTTP header is preferred and not detectable from HTML alone.
-- **[Security]** HSTS header not verifiable from HTML
-- **[Security]** Permissions-Policy not verifiable from HTML
-- **[SEO & Discoverability]** No canonical URL
-- **[PWA Advanced]** No handle_links — links may open in browser
-- **[PWA Advanced]** iOS Safari lacks support for: push notifications (requires iOS 16.4+)
+## Passed Highlights
 
-## Passed Checks
-
-### Manifest & Advanced
-- **[Manifest]** name: 'Test Progressive Web App'
-- **[Manifest]** short_name: 'TestPWA' (7 chars)
-- **[Manifest]** start_url: '/'
-- **[Manifest]** display: 'standalone'
-- **[Manifest]** Maskable icon found (adaptive icon support)
-- **[Manifest]** Icons: 192x192, 512x512
-- **[Manifest]** theme_color: '#1a73e8'
-- **[Manifest]** background_color: '#ffffff'
-- **[Manifest]** scope: '/'
-- **[Advanced Manifest]** id: '/'
-- **[Advanced Manifest]** description present
-- **[Advanced Manifest]** screenshots: 2 (wide + narrow)
-- **[Advanced Manifest]** shortcuts: 1 quick actions
-- **[Advanced Manifest]** orientation: 'portrait'
-- **[Advanced Manifest]** categories: ['utilities']
-- **[Advanced Manifest]** display_override: ['window-controls-overlay', 'standalone']
-- **[Advanced Manifest]** lang: 'en' (i18n support)
-- **[Advanced Manifest]** Web Share Target API configured
-- **[Advanced Manifest]** Launch handler configured
-- **[Advanced Manifest]** iOS splash screens: 40 device sizes configured
-
-### Service Worker
-- **[Service Worker]** Service worker registration found
-- **[Service Worker]** Install event with precaching
-- **[Service Worker]** Activate event with cache cleanup
-- **[Service Worker]** Fetch event handler found
-- **[Service Worker]** Cache strategy: cache-first + network-first
-- **[Service Worker]** Cache versioning detected
-- **[Service Worker]** skipWaiting + clients.claim (instant SW updates)
-- **[Service Worker]** Push notification handler found
-- **[Service Worker]** Notification click handler configured
-- **[Service Worker]** Background Sync handler detected
-- **[Service Worker]** Navigation preload enabled
-- **[Service Worker]** Stale-while-revalidate pattern detected
-
-### Offline & Installability
-- **[Offline]** Offline fallback page detected
-- **[Offline]** App shell (HTML/CSS/JS) precached
-- **[Offline]** Offline state detection in UI (online/offline events)
-- **[Offline]** Update prompt shown to user (New version available notification)
-- **[Offline]** Graceful update flow (user controls when to update)
-- **[Installability]** Manifest linked in HTML
-- **[Installability]** Served over HTTPS
-- **[Installability]** SW fetch handler (install requirement)
-- **[Installability]** 192x192 icon present
-- **[Installability]** 512x512 icon present
-- **[Installability]** Apple touch icon (iOS support)
-- **[Installability]** Custom install prompt (beforeinstallprompt) detected
-- **[Installability]** Custom install UI button found
-- **[Installability]** iOS web app capable meta tag
-
-### Security & Performance
-- **[Security]** HTTPS enforced
-- **[Security]** SRI: 2/2 external resources protected
-- **[Security]** No mixed content
-- **[Security]** SW scope explicitly restricted
-- **[Security]** Error handling in SW
-- **[Security]** Referrer-Policy meta tag present
-- **[Security]** COOP/COEP headers detected
-- **[Performance]** No render-blocking scripts in <head>
-- **[Performance]** Lazy loading: 1/1
-- **[Performance]** Modern image formats (webp/avif)
-- **[Performance]** 2/2 scripts async/defer/module
-- **[Performance]** 2 resource hints (preconnect, preload)
-- **[Performance]** font-display: swap
-- **[Performance]** LCP: Hero image preloaded
-- **[Performance]** INP: No blocking event handlers
-- **[Performance]** CLS: Images have explicit dimensions
-- **[Performance]** Critical CSS inlined in <head>
-
-### UX & Accessibility (iOS Safe Area Support)
-- **[UX & A11y]** Responsive viewport configured
-- **[UX & A11y]** viewport-fit=cover for iOS safe areas
-- **[UX & A11y]** Safe area CSS: env(safe-area-inset-*) used for fixed elements
-- **[UX & A11y]** Touch event handling: onTouchEnd handlers on critical buttons
-- **[UX & A11y]** touch-manipulation CSS for 300ms tap delay prevention
-- **[UX & A11y]** Semantic HTML: 6 landmarks
-- **[UX & A11y]** ARIA: 6 attributes
-- **[UX & A11y]** lang attribute on <html>
-- **[UX & A11y]** iOS status bar styling (black-translucent)
-- **[UX & A11y]** Theme color meta tag
-- **[UX & A11y]** Focus indicators preserved
-- **[UX & A11y]** Skip to main content link present
-- **[SEO & Discoverability]** title: 'Test Progressive Web App' (26 chars)
-- **[SEO & Discoverability]** meta description: 120 chars
-- **[SEO & Discoverability]** Open Graph: og:title, og:description, og:image
-
-### iOS Compatibility
-- **[iOS Compatibility]** apple-mobile-web-app-capable: yes
-- **[iOS Compatibility]** apple-mobile-web-app-status-bar-style: black-translucent
-- **[iOS Compatibility]** mobile-web-app-capable: yes
-- **[iOS Compatibility]** Complete iOS meta tag set — Bonus point earned!
-
-### PWA Advanced Capabilities (Unique — Not in Lighthouse)
-- **[PWA Advanced]** launch_handler.client_mode: [navigate-existing]
-- **[PWA Advanced]** File handler: /open accepts .pdf, .txt
-- **[PWA Advanced]** Protocol handler: web+myapp:// → /handle?url=%s
-- **[PWA Advanced]** Screenshots with form_factor: wide + narrow
-- **[PWA Advanced]** All 1 shortcuts have icons
-- **[PWA Advanced]** share_target: POST /share (params: title, text, url)
-- **[PWA Advanced]** Web Push: gcm_sender_id configured
-
-## Notes
-
-- **[Advanced Manifest]** Window Controls Overlay enabled — native-like title bar on desktop
-- **[Advanced Manifest]** No 'dir' field — defaults to 'auto'
-- **[Advanced Manifest]** No note_taking (ChromeOS lock screen notes integration)
-- **[Advanced Manifest]** No widgets (Windows 11 Widgets Board integration)
-- **[PWA Advanced]** Reuses existing window — prevents duplicate instances
-- **[PWA Advanced]** No scope_extensions (single-origin PWA)
-- **[PWA Advanced]** No edge_side_panel (Edge sidebar support)
-- **[PWA Advanced]** No tabbed display mode (experimental multi-tab)
-- **[PWA Advanced]** iOS PWA: No badging API, limited background sync, 50MB storage cap
-- **[PWA Advanced]** No iarc_rating_id (IARC age rating for app store distribution)
-
-## iOS/Safari Specific Notes
-
-This PWA has excellent iOS support:
-- Safe area insets properly handled for notch/Dynamic Island
-- Touch events use onTouchEnd for iOS PWA compatibility
-- iOS splash screens configured for all device sizes
-- Status bar styled for immersive experience
-
-## Prioritized Recommendations
-
-### Medium Priority (Improvements)
-
-1. **No CSP meta tag detected** (Security)
-   - **How to fix:** Add CSP meta tag:
-```html
-<meta http-equiv="Content-Security-Policy"
-  content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
-```
-Or better: set via HTTP header.
-
-2. **No canonical URL** (SEO & Discoverability)
-   - **How to fix:** Add `<link rel="canonical" href="https://example.com/">` in `<head>`.
-
-3. **No handle_links** (PWA Advanced)
-   - **How to fix:** Add `"handle_links": "preferred"` to manifest.json for in-app link handling.
-
-4. **No note_taking** (Advanced Manifest)
-   - **How to fix:** Add `"note_taking": { "new_note_url": "/notes/new" }` to manifest.json for ChromeOS integration.
-
-5. **No widgets** (Advanced Manifest)
-   - **How to fix:** Add `"widgets"` array to manifest.json for Windows 11 Widgets Board integration.
-
-## Reference Links
-
-- **Security**: https://web.dev/articles/csp
-- **SEO & Discoverability**: https://web.dev/articles/discoverable
-- **PWA Advanced**: https://developer.chrome.com/docs/capabilities
-- **PWA Checklist**: https://web.dev/articles/pwa-checklist
-- **iOS Safe Areas**: https://webkit.org/blog/7929/designing-websites-for-iphone-x/
+- **Manifest:** all required fields, 192/512 + separate maskable icon, all icons 200 `image/png`; `id`, `scope`, shortcuts, categories
+- **Service worker:** Workbox precache with revisions (`sw.js:1` `__WB_MANIFEST`), CacheFirst images / NetworkFirst API / SWR assets with `ExpirationPlugin`, `CacheableResponsePlugin`, `NavigationRoute` fallback, push + `notificationclick` with actions, `SKIP_WAITING` message handler
+- **Offline & update:** offline page, `onNeedRefresh` prompt with `pwa-just-updated` suppression (`source/src/pwa/UpdateToast.tsx:18`), IndexedDB via `idb`, `storage.persist()`, Background Sync on `online`
+- **Real-time:** `reconnectionAttempts: Infinity`, `reconnectionDelayMax: 30000` (`source/src/lib/socket.ts:7`), reconnect on `visibilitychange` (`:31`), room re-join in persistent `connect` listener (`:22`)
+- **UX:** safe-area padding on header and bottom nav, `100dvh` layout, reduced-motion styles, complete light/dark pairs, view-state persistence with stale-id handling (`source/src/chat/useActiveConversation.ts:12`)
+- **Security & performance:** HTTPS with 301 redirect, HSTS 1 year, nosniff, COOP `same-origin`, Brotli, `fetchpriority="high"` hero in AVIF, no `unload` listeners
 
 ---
-*Generated by PWA Review Skill v5.0.0*
+
+## Recommendations
+
+### High Priority
+1. Re-enable zoom in the viewport meta — +2 pts — S
+2. Strict CSP (nonce, no `'unsafe-inline'`) + `frame-ancestors` — +2 pts — M
+
+### Medium Priority
+1. Add `file_handlers` / `protocol_handlers` if the app opens files or deep links — up to +4 pts — M
+2. `screenshots` with `form_factor: "wide"` for Chrome's richer desktop install dialog — +1 pt — S
+3. Periodic sync for the inbox and `storage.estimate()` warnings — +2 pts — S
+
+### Quick Wins
+- `Cache-Control: no-cache` for `/sw.js`
+- `Permissions-Policy` header
+- iOS install hint banner
+- Navigation preload in Workbox (`navigationPreload.enable()`)
+- JSON-LD `WebApplication` block
+
+## Platform Notes
+- iOS: Web Push works only after the app is added to the Home Screen (16.4+); Declarative Web Push is available from Safari 18.4.
+- Background/Periodic Sync are Chromium-only; the `online` listener fallback already covers Safari.
+
+---
+
+<details><summary>Machine-readable summary</summary>
+
+```json
+{"version":"6.0.0","target":"https://app.example.com","date":"2026-10-22","earned":186,"applicable":206,"nominal":209,
+ "percent":90.3,"grade":"A+","provisional":false,
+ "categories":{"manifest":[22,22],"advanced_manifest":[13,14],"service_worker":[33,35],
+ "offline":[22,24],"installability":[14,15],"security":[11,14],"performance":[18,19],
+ "ux":[33,35],"seo":[7,8],"advanced":[12,19],"ios":[1,1]},
+ "na":["sri","note_taking"],"unverifiable":[],"critical":[],
+ "warnings":["zoom_disabled","csp_unsafe_inline","no_permissions_policy","no_frame_protection","sw_long_cached","no_ios_install_hint"]}
+```
+</details>
+
+*Generated by PWA Review Skill v6.0.0*
