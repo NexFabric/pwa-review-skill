@@ -338,8 +338,11 @@ THEME_PAIR_RULES = {
     "surface": (r"(?<![:\w-])bg-(?:zinc|gray|slate|neutral|stone)-(?:800|900|950)\b", r"dark:bg-"),
     "text_white": (r"(?<![:\w-])text-white\b", r"dark:text-|bg-(?:\w+-[5-9]00|gradient|primary|accent|brand|indigo|blue|red|green|emerald|violet|purple|black)"),
 }
-# Scrims behind modals/drawers are meant to stay dark in both themes.
-SCRIM_RX = re.compile(r"\bfixed\b(?=.*\binset-0\b)|backdrop")
+# Scrims (behind modals/drawers, or over images and avatars) stay dark in both themes.
+SCRIM_RX = re.compile(r"\b(?:fixed|absolute)\b(?=.*\binset-0\b)|backdrop")
+SCRIM_RULES = {"overlay", "gradient"}
+# Class lists split across lines (cn()/JSX wrapping): look back this many lines for the pair.
+PAIR_LOOKBACK = 3
 CSS_VAR_SURFACE_RX = re.compile(r"\b(?:bg|text|border)-\[var\(--")
 DROPDOWN_RX = re.compile(r"\babsolute\b(?=.*\b(?:right-0|left-0|end-0)\b)(?=.*\b(?:mt-\d|top-full)\b)(?=.*\bw-(?:\d+|\[))")
 DROPDOWN_SAFE_RX = re.compile(r"\bfixed\b|max-sm:|sm:absolute|md:absolute")
@@ -354,17 +357,19 @@ def source_audit(corpus: dict[str, str]) -> dict:
     for fname, text in corpus.items():
         if not fname.startswith("source/") or Path(fname).suffix.lower() not in UI_EXT:
             continue
-        for no, line in enumerate(text.splitlines(), 1):
+        lines = text.splitlines()
+        for no, line in enumerate(lines, 1):
             css_var_tokens += len(CSS_VAR_SURFACE_RX.findall(line))
+            context = " ".join(lines[max(0, no - 1 - PAIR_LOOKBACK):no])
             scrim = bool(SCRIM_RX.search(line))
             for k, (tok, pair) in compiled.items():
                 n = len(tok.findall(line))
                 if not n:
                     continue
                 pairs[k]["total"] += n
-                if k == "overlay" and scrim:
+                if k in SCRIM_RULES and scrim:
                     continue
-                if not pair.search(line):
+                if not pair.search(context):
                     pairs[k]["unpaired"] += n
                     if len(pairs[k]["samples"]) < 5:
                         pairs[k]["samples"].append(f"{fname}:{no}")
