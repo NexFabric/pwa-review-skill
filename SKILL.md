@@ -7,7 +7,7 @@ allowed-tools: Bash(python3:*), Bash(curl:*), Read, Grep, Glob, WebFetch
 
 <pwa-review>
 
-# PWA Review Skill (v6.1.2)
+# PWA Review Skill (v6.2.0)
 
 Audits a Progressive Web App across 11 categories (209 nominal points) and grades it on the
 **points that actually apply** to that app. Lighthouse removed its PWA category in v12 (2024);
@@ -155,7 +155,7 @@ Signal names (`sig:`) refer to `summary.json → signals` / `signals.json`.
 |-------|----:|---------------|
 | `description` | 1 | present, non-empty |
 | `screenshots` | 2 | 2 = at least one `form_factor: "wide"` and one narrow/unspecified (Chrome's richer install UI); 1 = screenshots without `form_factor` |
-| `shortcuts` | 2 | ≥ 1 item with `name` + `url`; 1 if any shortcut lacks icons (warning only) |
+| `shortcuts` | 2 | ≥ 1 item with `name` + `url`; 1 if any shortcut lacks icons (warning only). Source mode: each `url` must map to a real route or a param the app reads — a shortcut to a 404 or an ignored `?param` → 0 |
 | `categories` | 1 | array present |
 | `orientation` | 1 | present |
 | `lang` / `dir` | 1 | either present |
@@ -163,7 +163,7 @@ Signal names (`sig:`) refer to `summary.json → signals` / `signals.json`.
 | `scope` | 1 | present |
 | Maskable icon | 1 | an icon with `purpose` containing `maskable`. Combined `"any maskable"` → pass with warning (padding looks wrong as `any`) |
 | `start_url` inside `scope`, same origin | 1 | resolve both against the manifest URL |
-| `note_taking` | 1 | N/A unless it is a note-taking app |
+| `note_taking` | 1 | N/A unless it is a note-taking app; `new_note_url` must open a new note/task (check its param in source) |
 | iOS splash screens | 2 | 2 = `apple-touch-startup-image` links with `media` for ≥ 3 device sizes; 1 = one generic image |
 
 ### Category 3: Service Worker & Caching (35 points)
@@ -230,8 +230,8 @@ the automatic install prompt still looks for one.
 | 192×192 icon | 1 | cross-check |
 | 512×512 icon | 1 | cross-check |
 | `apple-touch-icon` | 1 | `html.links.apple-touch-icon` (iOS ignores manifest icons for the home screen) |
-| `beforeinstallprompt` handled | 2 | `sig:bip` in client code |
-| Custom install UI | 1 | button/banner shown from the deferred prompt; `sig:appinstalled` hides it |
+| `beforeinstallprompt` handled | 2 | `sig:bip` in client code (see the next row: it must also be offered) |
+| Custom install UI | 1 | `sig:bip_prompt` — the deferred event's `.prompt()` is called from a visible button/banner; `sig:appinstalled` hides it. A `beforeinstallprompt` listener that calls `preventDefault()` but never `.prompt()` suppresses the browser's own install UI → 0 and **warning** |
 | iOS install guidance | 1 | `sig:ios_install_hint` — instructions for Share → Add to Home Screen (iOS has no prompt API) |
 | Standalone-mode detection | 1 | `sig:display_mode` — `matchMedia('(display-mode: standalone)')` or `navigator.standalone` to hide install UI once installed |
 
@@ -325,8 +325,8 @@ platform it does not target.
 |-------|----:|---------------|
 | `launch_handler` | 2 | object with `client_mode` |
 | `file_handlers` | 2 | array with `action` + `accept` (requires `launchQueue` consumer: `sig:launch_queue`, else 1) |
-| `protocol_handlers` | 2 | array with `protocol` + `url` |
-| `share_target` | 2 | object with `action` (+ `method`/`enctype` for files) |
+| `protocol_handlers` | 2 | array with `protocol` + `url`, and the target route handles `%s` in source. Declared but unhandled → 0 + warning |
+| `share_target` | 2 | object with `action` (+ `method`/`enctype` for files) **and** the app reads the shared params (`sig:launch_params` or a POST handler). Declared but unhandled → 0 + warning |
 | `handle_links` | 2 | `preferred` / `auto` / `not-preferred` present (experimental, Chromium) |
 | `display_override` | 1 | array present |
 | `edge_side_panel` | 1 | object present (Edge) |
@@ -356,6 +356,8 @@ platform it does not target.
 - Missing 192×192 or 512×512 icon, or icons 404
 
 ### Warnings (should fix)
+- Manifest features declared but not handled by the app (share target, shortcuts to missing routes, file/protocol handlers, widgets)
+- `beforeinstallprompt` suppressed but never offered (no install UI at all)
 - Missing theme_color/background_color, `theme_color` ≠ meta theme-color
 - No offline fallback, no navigation fallback for SPA routes
 - No CSP, CSP with `'unsafe-inline'` scripts, no HTTPS redirect, weak/absent HSTS
@@ -443,7 +445,7 @@ platform it does not target.
 <details><summary>Machine-readable summary</summary>
 
 ```json
-{"version":"6.1.2","target":"…","date":"…","earned":0,"applicable":0,"nominal":209,
+{"version":"6.2.0","target":"…","date":"…","earned":0,"applicable":0,"nominal":209,
  "percent":0,"grade":"…","provisional":false,
  "categories":{"manifest":[0,22],"advanced_manifest":[0,15],"service_worker":[0,35],
  "offline":[0,24],"installability":[0,15],"security":[0,16],"performance":[0,19],
@@ -452,7 +454,7 @@ platform it does not target.
 ```
 </details>
 
-*Generated by PWA Review Skill v6.1.2*
+*Generated by PWA Review Skill v6.2.0*
 ```
 
 Category arrays are `[earned, applicable]`. Keep the JSON block so audits can be diffed over time.

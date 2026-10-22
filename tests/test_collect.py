@@ -112,6 +112,9 @@ class SourceModeTest(unittest.TestCase):
                 "document.addEventListener('visibilitychange', () => s.connect());\n")
             (src / "node_modules" / "x" / "i.js").write_text("navigator.setAppBadge(1)")
             (src / "src" / "push.ts").write_text("getToken(messaging, { vapidKey: KEY })")
+            (src / "src" / "pwa.ts").write_text(
+                "reg.periodicSync\n  ?.register('sync-content', {})\nawait deferred.prompt();\n"
+                "const p = new URL(location.href).searchParams.get('share');\n")
             (src / "src" / "Menu.tsx").write_text(
                 '<div className="bg-black/60 dark:bg-black/60 border-white/10">\n'
                 '<div className="absolute right-0 mt-2 w-56">\n'
@@ -128,7 +131,7 @@ class SourceModeTest(unittest.TestCase):
                 collect.main(["--source", str(src), "--out", str(out)])
             summary = json.loads((out / "summary.json").read_text())
             self.assertEqual(summary["mode"], "source")
-            self.assertEqual(summary["source"]["files_scanned"], 3)
+            self.assertEqual(summary["source"]["files_scanned"], 4)
             audit = summary["source_audit"]
             self.assertEqual(audit["theme_pairs"]["overlay"], {"total": 2, "unpaired": 0, "samples": []})
             self.assertEqual(audit["theme_pairs"]["border"]["unpaired"], 1)
@@ -141,6 +144,8 @@ class SourceModeTest(unittest.TestCase):
             self.assertEqual(audit["theme_pairs"]["gradient"]["unpaired"], 0)   # image scrim
             self.assertEqual(audit["theme_pairs"]["text_white"]["unpaired"], 0)  # bg on previous line
             self.assertGreater(summary["signals"]["push_subscribe"], 0)
+            for name in ("periodic_register", "bip_prompt", "launch_params"):
+                self.assertGreater(summary["signals"][name], 0, name)
             self.assertEqual(summary["signals"]["web_share"], 0)
             self.assertGreater(summary["signals"]["reconnect_cfg"], 0)
             self.assertGreater(summary["signals"]["visibility"], 0)

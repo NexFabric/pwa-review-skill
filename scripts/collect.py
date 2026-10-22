@@ -100,14 +100,17 @@ SIGNALS: dict[str, str] = {
     "persist": r"storage\.persist\s*\(",
     "indexeddb": r"indexedDB\.open|['\"]idb['\"]|idb-keyval|Dexie|localforage|openDB\s*\(",
     "quota": r"storage\.estimate\s*\(",
-    "sync_register": r"sync\.register\s*\(",
-    "periodic_register": r"periodicSync\.register\s*\(",
+    "sync_register": r"\bsync\s*\??\.\s*register\s*\(",
+    "periodic_register": r"periodicSync\s*\??\.\s*register\s*\(",
     # Real-time resilience
     "realtime": r"new\s+WebSocket\s*\(|socket\.io|new\s+EventSource\s*\(|reconnectionAttempts|new\s+Pusher\s*\(|\.subscribe\(\s*['\"]realtime|supabase\.channel\s*\(",
     "visibility": r"visibilitychange",
     "reconnect_cfg": r"reconnectionAttempts|reconnectionDelayMax|reconnect_failed|reconnectInterval|maxReconnect",
     # Install experience
     "bip": r"beforeinstallprompt",
+    # The deferred event must actually be offered; capturing it with preventDefault() alone
+    # suppresses the browser's own install UI.
+    "bip_prompt": r"\.prompt\s*\(\s*\)",
     "appinstalled": r"appinstalled",
     "display_mode": r"display-mode\s*:\s*standalone|navigator\.standalone",
     "ios_install_hint": r"(?i)add to home ?screen|ana ekrana ekle|addToHomeScreen|ios-install",
@@ -140,6 +143,8 @@ SIGNALS: dict[str, str] = {
     "web_share": r"navigator\.share\s*\(|navigator\.canShare",
     "view_transitions": r"startViewTransition|@view-transition",
     "launch_queue": r"launchQueue",
+    # App code reading manifest launch params (share_target / note_taking / shortcuts).
+    "launch_params": r"searchParams\.(?:get|has)\(\s*['\"](?:share|title|text|url|action|shortcut)['\"]|URLSearchParams\([^)]*\)\.get\(\s*['\"](?:share|action)['\"]",
 }
 
 SW_LITERAL_RX = re.compile(
