@@ -114,7 +114,7 @@ class SourceModeTest(unittest.TestCase):
             (src / "src" / "push.ts").write_text("getToken(messaging, { vapidKey: KEY })")
             (src / "src" / "pwa.ts").write_text(
                 "reg.periodicSync\n  ?.register('sync-content', {})\nawait deferred.prompt();\n"
-                "const p = new URL(location.href).searchParams.get('share');\n")
+                "const params = new URLSearchParams(search);\nif (params.get('action') === 'new-task') {}\n")
             (src / "src" / "Menu.tsx").write_text(
                 '<div className="bg-black/60 dark:bg-black/60 border-white/10">\n'
                 '<div className="absolute right-0 mt-2 w-56">\n'
@@ -122,7 +122,8 @@ class SourceModeTest(unittest.TestCase):
                 '<img className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />\n'
                 '<div className="h-12 bg-brand-500 rounded-full\n'
                 '  flex items-center text-white">\n'
-                '<div className="fixed left-4 right-4 sm:absolute sm:right-0 mt-2 w-56">\n')
+                '<div className="fixed left-4 right-4 sm:absolute sm:right-0 mt-2 w-56">\n'
+                '<div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-2rem)]">\n')
             (src / "src" / "socket.test.ts").write_text("navigator.share({})")
             (src / "tests").mkdir()
             (src / "tests" / "e2e.ts").write_text("navigator.share({})")
@@ -136,8 +137,8 @@ class SourceModeTest(unittest.TestCase):
             self.assertEqual(audit["theme_pairs"]["overlay"], {"total": 2, "unpaired": 0, "samples": []})
             self.assertEqual(audit["theme_pairs"]["border"]["unpaired"], 1)
             self.assertEqual(audit["theme_pairs"]["border"]["samples"], ["source/src/Menu.tsx:1"])
-            self.assertEqual(audit["dropdowns"]["candidates"], 2)
-            self.assertEqual(audit["dropdowns"]["mobile_safe"], 1)
+            self.assertEqual(audit["dropdowns"]["candidates"], 3)
+            self.assertEqual(audit["dropdowns"]["mobile_safe"], 2)
             self.assertEqual(audit["dropdowns"]["samples"], ["source/src/Menu.tsx:2"])
             self.assertEqual(audit["theme_pairs"]["overlay"]["total"], 2)  # scrim counted, not flagged
             self.assertEqual(audit["css_var_theme_tokens"], 1)

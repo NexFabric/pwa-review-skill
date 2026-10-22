@@ -144,7 +144,7 @@ SIGNALS: dict[str, str] = {
     "view_transitions": r"startViewTransition|@view-transition",
     "launch_queue": r"launchQueue",
     # App code reading manifest launch params (share_target / note_taking / shortcuts).
-    "launch_params": r"searchParams\.(?:get|has)\(\s*['\"](?:share|title|text|url|action|shortcut)['\"]|URLSearchParams\([^)]*\)\.get\(\s*['\"](?:share|action)['\"]",
+    "launch_params": r"searchParams\.(?:get|has)\(\s*['\"](?:share|title|text|url|action|shortcut)['\"]|\.(?:get|has)\(\s*['\"](?:share|action)['\"]\s*\)",
 }
 
 SW_LITERAL_RX = re.compile(
@@ -350,7 +350,8 @@ SCRIM_RULES = {"overlay", "gradient"}
 PAIR_LOOKBACK = 3
 CSS_VAR_SURFACE_RX = re.compile(r"\b(?:bg|text|border)-\[var\(--")
 DROPDOWN_RX = re.compile(r"\babsolute\b(?=.*\b(?:right-0|left-0|end-0)\b)(?=.*\b(?:mt-\d|top-full)\b)(?=.*\bw-(?:\d+|\[))")
-DROPDOWN_SAFE_RX = re.compile(r"\bfixed\b|max-sm:|sm:absolute|md:absolute")
+# Mobile-safe: viewport-positioned on phones, or width capped to the viewport.
+DROPDOWN_SAFE_RX = re.compile(r"\bfixed\b|max-sm:|sm:absolute|md:absolute|max-w-\[(?:calc\()?100vw|max-w-\[\d+vw\]")
 UI_EXT = {".tsx", ".jsx", ".vue", ".svelte", ".astro", ".html"}
 
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [6.2.1] - 2026-10-22
+
+### Fixed
+- `launch_params` missed params read through a separate `URLSearchParams` variable
+  (`params.get('share')`).
+- Dropdowns whose width is capped to the viewport (`max-w-[calc(100vw-…)]`) now count as
+  mobile-safe.
+
+---
+
 ## [6.2.0] - 2026-10-22
 
 ### Added

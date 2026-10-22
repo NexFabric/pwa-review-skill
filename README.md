@@ -202,4 +202,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Version:** 6.2.0 · **Author:** [@emrahub](https://github.com/emrahub)
+**Version:** 6.2.1 · **Author:** [@emrahub](https://github.com/emrahub)
