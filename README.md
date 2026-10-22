@@ -10,6 +10,13 @@ Lighthouse removed its PWA category in v12 (2024). This skill fills that gap and
 Lighthouse never covered: iOS/Safari behaviour, update UX, storage durability, real-time
 reconnection, Chromium manifest capabilities and response-header security.
 
+## What's new in v6.2
+
+- **Declared vs. delivered:** manifest features (share target, shortcuts, protocol handlers,
+  note taking) only score when the app actually handles them, and a suppressed-but-never-offered
+  install prompt is flagged.
+- Multi-line and optional-chained `sync.register` / `periodicSync.register` calls are detected.
+
 ## What's new in v6.1
 
 - **Source audit for theming and menus:** with `--source`, the collector counts Tailwind
@@ -195,4 +202,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Version:** 6.1.2 · **Author:** [@emrahub](https://github.com/emrahub)
+**Version:** 6.2.0 · **Author:** [@emrahub](https://github.com/emrahub)

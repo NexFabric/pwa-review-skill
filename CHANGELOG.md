@@ -1,5 +1,22 @@
 # Changelog
 
+## [6.2.0] - 2026-10-22
+
+### Added
+- Signals `bip_prompt` (the deferred install prompt is actually offered) and `launch_params`
+  (app code reads share-target / note-taking / shortcut params).
+- Checklist: a `beforeinstallprompt` listener that suppresses the browser UI without ever calling
+  `.prompt()` scores 0 with a warning; `share_target`, `protocol_handlers`, `note_taking` and
+  `shortcuts` must be handled by the app (declared-but-unhandled → 0 + warning).
+
+### Fixed
+- `sync.register` / `periodicSync.register` calls split across lines or using optional chaining
+  (`reg.periodicSync\n  ?.register(…)`) were missed.
+
+Found by auditing and fixing a production PWA end to end.
+
+---
+
 ## [6.1.2] - 2026-10-22
 
 ### Fixed
