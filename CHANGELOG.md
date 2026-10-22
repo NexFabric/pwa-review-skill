@@ -1,5 +1,24 @@
 # Changelog
 
+## [6.0.1] - 2026-10-22
+
+### Fixed
+- Collector resolved bare bundler chunk paths (`assets/js/x.js`, Vite preload deps) against the
+  importing chunk, producing `/assets/js/assets/js/…` 404s that exhausted the request budget
+  before the service worker and `robots.txt` were fetched. Bare paths now resolve against the
+  app base; only `./` and `../` are module-relative.
+- Bundle crawl now stops after `--max-bundles` failures and keeps 15 requests in reserve for the
+  service worker, its imports, path probes and `robots.txt` (budget raised 60 → 80).
+
+### Changed
+- Web Push signal also recognises Firebase `getToken({ vapidKey })`.
+- Source mode skips test directories (`tests`, `__tests__`, `e2e`, …) and `*.test.*` / `*.spec.*`
+  / `*.stories.*` files.
+
+Found by auditing a production Vite + socket.io PWA with the v6.0.0 skill.
+
+---
+
 ## [6.0.0] - 2026-10-22
 
 ### Breaking

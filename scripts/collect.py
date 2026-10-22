@@ -35,7 +35,9 @@ UA = (
     "(KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 pwa-review/6"
 )
 MAX_BYTES = 5 * 1024 * 1024
-MAX_REQUESTS = 60
+MAX_REQUESTS = 80
+# Requests kept back for the SW, its imports, path probes and robots.txt.
+RESERVED_REQUESTS = 15
 
 SECURITY_HEADERS = [
     "content-security-policy",
@@ -132,7 +134,7 @@ SIGNALS: dict[str, str] = {
     "manual_chunks": r"manualChunks|splitChunks|vendor[-.][0-9a-f]+\.js",
     "speculation_rules": r"speculationrules",
     # Advanced capabilities
-    "push_subscribe": r"pushManager\.subscribe\s*\(|applicationServerKey",
+    "push_subscribe": r"pushManager\.subscribe\s*\(|applicationServerKey|vapidKey",
     "notif_permission": r"Notification\.requestPermission|requestPermission\s*\(",
     "badging": r"setAppBadge|clearAppBadge",
     "web_share": r"navigator\.share\s*\(|navigator\.canShare",
@@ -149,7 +151,9 @@ SOURCE_EXT = {
 SOURCE_SKIP_DIRS = {
     "node_modules", ".git", ".next", ".nuxt", ".svelte-kit", ".turbo", ".cache",
     "dist", "build", "out", "coverage", ".vercel", ".output", "vendor", "__pycache__",
+    "__tests__", "tests", "test", "e2e", "cypress", "playwright",
 }
+TEST_FILE_RX = re.compile(r"\.(?:test|spec|stories)\.[cm]?[jt]sx?$")
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -308,6 +312,15 @@ def _safe_name(url: str, default: str) -> str:
     return name[-120:]
 
 
+def _resolve_ref(ref: str, bundle_url: str, page_url: str) -> str:
+    # Only "./" and "../" are module-relative. Bundlers emit bare chunk paths
+    # ("assets/js/x.js", Vite preload deps) relative to the app base, not to the
+    # importing chunk; resolving them against the chunk doubles the directory.
+    if ref.startswith(("./", "../")):
+        return urljoin(bundle_url, ref)
+    return urljoin(page_url, ref)
+
+
 def _text(body: bytes) -> str:
     return body.decode("utf-8", errors="replace")
 
@@ -335,7 +348,8 @@ def collect_source(src: Path, corpus: dict[str, str], limit: int = 4000) -> int:
         dirs[:] = [d for d in dirs if d not in SOURCE_SKIP_DIRS and not d.startswith(".")]
         for f in files:
             p = Path(root) / f
-            if p.suffix.lower() not in SOURCE_EXT or p.name.endswith((".min.js", ".map")):
+            if (p.suffix.lower() not in SOURCE_EXT or p.name.endswith((".min.js", ".map"))
+                    or TEST_FILE_RX.search(p.name)):
                 continue
             if p.name in {"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}:
                 continue
@@ -493,14 +507,16 @@ def collect_url(url: str, out: Path, fetcher: Fetcher, max_bundles: int,
     seen: set[str] = set()
     bdir = out / "bundles"
     bdir.mkdir(exist_ok=True)
-    js_fetched = 0
-    while queue and js_fetched < max_bundles:
+    js_fetched = failures = 0
+    crawl_budget = MAX_REQUESTS - RESERVED_REQUESTS
+    while queue and js_fetched < max_bundles and failures < max_bundles and fetcher.count < crawl_budget:
         u = queue.pop(0)
         if u in seen or not _same_origin(u, base):
             continue
         seen.add(u)
         r = fetcher.get(u)
         if "body" not in r or r.get("status") != 200:
+            failures += 1
             bundles.append({"url": u, "status": r.get("status"), "error": r.get("error")})
             continue
         js_fetched += 1
@@ -512,11 +528,11 @@ def collect_url(url: str, out: Path, fetcher: Fetcher, max_bundles: int,
                         "cache_control": r["headers"].get("cache-control"),
                         "content_encoding": r["headers"].get("content-encoding")})
         for ref in JS_REF_RX.findall(txt)[:200]:
-            ref_url = urljoin(u, ref)
+            ref_url = _resolve_ref(ref, u, base)
             if ref_url not in seen and _same_origin(ref_url, base) and "/node_modules/" not in ref_url:
                 queue.append(ref_url)
     for i, u in enumerate(css_urls[:10]):
-        if not _same_origin(u, base):
+        if not _same_origin(u, base) or fetcher.count >= crawl_budget:
             continue
         r = fetcher.get(u)
         if "body" in r and r.get("status") == 200:

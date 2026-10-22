@@ -65,6 +65,13 @@ class CollectFixtureTest(unittest.TestCase):
         self.assertTrue(any("chunk-lazy" in f for f in files), files)
         self.assertGreater(self.summary["signals"]["badging"], 0)
 
+    def test_bare_chunk_paths_resolve_against_app_base(self):
+        urls = [b["url"] for b in self.summary["bundles"]]
+        vendor = [b for b in self.summary["bundles"] if b["url"].endswith("vendor-abc123.js")]
+        self.assertEqual([b["status"] for b in vendor], [200], urls)
+        self.assertFalse(any("/assets/js/assets/js/" in u for u in urls), urls)
+        self.assertEqual(self.summary["robots"].get("error"), None)
+
     def test_html_facts(self):
         html = self.summary["html"]
         self.assertEqual(html["lang"], "en")
@@ -104,12 +111,18 @@ class SourceModeTest(unittest.TestCase):
                 "const s = io(url, { reconnectionAttempts: Infinity });\n"
                 "document.addEventListener('visibilitychange', () => s.connect());\n")
             (src / "node_modules" / "x" / "i.js").write_text("navigator.setAppBadge(1)")
+            (src / "src" / "push.ts").write_text("getToken(messaging, { vapidKey: KEY })")
+            (src / "src" / "socket.test.ts").write_text("navigator.share({})")
+            (src / "tests").mkdir()
+            (src / "tests" / "e2e.ts").write_text("navigator.share({})")
             out = Path(d) / "ev"
             with contextlib.redirect_stdout(io.StringIO()):
                 collect.main(["--source", str(src), "--out", str(out)])
             summary = json.loads((out / "summary.json").read_text())
             self.assertEqual(summary["mode"], "source")
-            self.assertEqual(summary["source"]["files_scanned"], 1)
+            self.assertEqual(summary["source"]["files_scanned"], 2)
+            self.assertGreater(summary["signals"]["push_subscribe"], 0)
+            self.assertEqual(summary["signals"]["web_share"], 0)
             self.assertGreater(summary["signals"]["reconnect_cfg"], 0)
             self.assertGreater(summary["signals"]["visibility"], 0)
             self.assertEqual(summary["signals"]["badging"], 0)

@@ -8,7 +8,7 @@ Lighthouse removed its PWA category in v12 (2024). This skill fills that gap and
 Lighthouse never covered: iOS/Safari behaviour, update UX, storage durability, real-time
 reconnection, Chromium manifest capabilities and response-header security.
 
-## What's new in v6.0.0
+## What's new in v6.0.1
 
 - **Evidence collector** (`scripts/collect.py`, Python stdlib only): raw HTML + response headers,
   HTTP→HTTPS redirect and compression probes, manifest + icon reachability, service worker
@@ -150,4 +150,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Version:** 6.0.0 · **Author:** [@emrahub](https://github.com/emrahub)
+**Version:** 6.0.1 · **Author:** [@emrahub](https://github.com/emrahub)
