@@ -31,3 +31,6 @@ Thumbs.db
 # Output files (generated during analysis)
 /output/
 *.skill
+
+# Collector default output
+/pwa-audit-evidence/
