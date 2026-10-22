@@ -1,5 +1,14 @@
 # Changelog
 
+## [6.1.1] - 2026-10-22
+
+### Changed
+- Documentation is agent-neutral: the skill follows the open Agent Skills format and works with
+  any AI coding agent that loads skills. Installation now covers the skills CLI
+  (`npx skills add`), the shared `~/.agents/skills` folder, and agents without skill support.
+
+---
+
 ## [6.1.0] - 2026-10-22
 
 ### Added
@@ -50,7 +59,7 @@ Found by auditing a production Vite + socket.io PWA with the v6.0.0 skill.
 - Category totals: Manifest 20→22, Service Worker 33→35, Installability 13→15,
   Performance 17→19, UX 29→35, SEO 7→8, PWA Advanced 17→19 (Advanced Manifest 15, Offline 24,
   Security 16, iOS 1 unchanged).
-- Frontmatter uses Claude Code fields (`argument-hint`, `allowed-tools`); the unsupported
+- Frontmatter uses standard skill fields (`argument-hint`, `allowed-tools`); the unsupported
   `user_invocable` / `args` keys were removed.
 
 ### Added
@@ -81,7 +90,7 @@ Found by auditing a production Vite + socket.io PWA with the v6.0.0 skill.
   `touch-action: manipulation`); `onTouchEnd` backups are no longer recommended.
 - Web Push: VAPID `applicationServerKey` or Declarative Web Push; `gcm_sender_id` no longer counts.
 - ARIA presence 2→1 point; `handle_links` documented as experimental.
-- README installation fixed: skills are directories (`~/.claude/skills/pwa-review/SKILL.md`).
+- README installation fixed: skills are directories (`<skills-dir>/pwa-review/SKILL.md`).
 - Example reports rewritten in the v6 format; the failing example comes from a real run.
 
 ### Fixed
@@ -428,10 +437,10 @@ These checks ensure PWAs work correctly on iPhones, which represent a significan
 ## [3.0.0] - 2026-02-04
 
 ### Changed
-- **BREAKING**: Converted from Python scripts to native Claude Code skill format
+- **BREAKING**: Converted from Python scripts to a native agent skill format
 - Embedded complete 123-point checklist directly in SKILL.md
 - Added YAML frontmatter for proper skill registration (`user_invocable: true`)
-- Added executable workflow instructions for Claude (WebFetch-based)
+- Added executable workflow instructions for the agent (WebFetch-based)
 - Updated README with new installation and usage instructions
 - Expanded to 10 categories (123 total points)
 
@@ -446,9 +455,9 @@ These checks ensure PWAs work correctly on iPhones, which represent a significan
 - Separate `references/pwa-checklist.md` — now embedded in SKILL.md
 
 ### Why This Change
-- Zero dependencies: Works directly in Claude Code without Python
+- Zero dependencies: Works directly in the agent without Python
 - Single command: Just run `/pwa-review <url>`
-- Better CORS handling: Claude's WebFetch handles cross-origin requests
+- Better CORS handling: the agent's web fetch tool handles cross-origin requests
 - Self-contained: All checklist items and instructions in one file
 
 ---
