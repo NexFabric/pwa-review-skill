@@ -1,4 +1,6 @@
-# PWA Review Skill for Claude Code
+# PWA Review Skill
+
+A portable [Agent Skill](https://agentskills.io) — usable by any AI coding agent that supports skills.
 
 An evidence-based Progressive Web App audit that goes beyond Lighthouse. It scores **11 categories
 (209 nominal points)**, grades only the checks that apply to your app, and backs every finding
@@ -8,7 +10,7 @@ Lighthouse removed its PWA category in v12 (2024). This skill fills that gap and
 Lighthouse never covered: iOS/Safari behaviour, update UX, storage durability, real-time
 reconnection, Chromium manifest capabilities and response-header security.
 
-## What's new in v6.1.0
+## What's new in v6.1
 
 - **Source audit for theming and menus:** with `--source`, the collector counts Tailwind
   light/dark pairs (overlay, border, hover, gradient, surface, `text-white`) and dropdown
@@ -67,19 +69,34 @@ With every check applicable: A+ 189+, A 168–188, B 147–167, C 126–146, D 8
 
 ## Installation
 
-Claude Code loads skills from **directories** (`<skills-dir>/<name>/SKILL.md`). A loose
-`pwa-review.md` file in `~/.claude/skills/` is not picked up.
+This is a portable **Agent Skill** in the open [Agent Skills](https://agentskills.io) format: a
+folder with `SKILL.md`, `scripts/` and `references/`. Any AI coding agent that loads skills can
+use it, and the collector is plain Python, so nothing is tied to one vendor.
+
+**With the skills CLI** (detects your agents and installs into the right folder):
 
 ```bash
-# Personal (all projects)
-git clone https://github.com/NexFabric/pwa-review-skill.git ~/.claude/skills/pwa-review
-
-# Project-level
-git clone https://github.com/NexFabric/pwa-review-skill.git .claude/skills/pwa-review
+npx skills add NexFabric/pwa-review-skill
 ```
 
-Restart Claude Code (or start a new session). Requirements: `python3` (3.9+) for the collector;
-no packages to install. Update with `git -C ~/.claude/skills/pwa-review pull`.
+**Manually** — clone the folder into your agent's skills directory. Skills are directories
+(`<skills-dir>/pwa-review/SKILL.md`); a loose `pwa-review.md` file is not picked up.
+
+```bash
+# Shared location read by most agents (personal, all projects)
+git clone https://github.com/NexFabric/pwa-review-skill.git ~/.agents/skills/pwa-review
+
+# Project-level
+git clone https://github.com/NexFabric/pwa-review-skill.git .agents/skills/pwa-review
+```
+
+If your agent reads a different skills folder, clone there instead or symlink the folder into it.
+
+**Agent without skill support:** point it at `SKILL.md` ("follow SKILL.md to audit
+https://…"); the workflow, checklist and report template are self-contained.
+
+Restart the agent (or start a new session). Requirements: `python3` (3.9+) for the collector; no
+packages to install. Update with `git -C <skills-dir>/pwa-review pull`.
 
 ## Usage
 
@@ -89,12 +106,12 @@ no packages to install. Update with `git -C ~/.claude/skills/pwa-review pull`.
 /pwa-review ./your-app                               # source only, before deploying
 ```
 
-Claude runs the collector into a temporary evidence folder, confirms signals at `file:line`,
+The agent runs the collector into a temporary evidence folder, confirms signals at `file:line`,
 scores each row, and prints the report. You can also run the collector yourself:
 
 ```bash
-python3 ~/.claude/skills/pwa-review/scripts/collect.py https://your-pwa.com --out /tmp/pwa-ev
-python3 ~/.claude/skills/pwa-review/scripts/collect.py --source ./your-app --out /tmp/pwa-src
+python3 <skills-dir>/pwa-review/scripts/collect.py https://your-pwa.com --out /tmp/pwa-ev
+python3 <skills-dir>/pwa-review/scripts/collect.py --source ./your-app --out /tmp/pwa-src
 ```
 
 ## Sample output
@@ -165,4 +182,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Version:** 6.1.0 · **Author:** [@emrahub](https://github.com/emrahub)
+**Version:** 6.1.1 · **Author:** [@emrahub](https://github.com/emrahub)
