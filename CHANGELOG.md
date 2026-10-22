@@ -1,5 +1,14 @@
 # Changelog
 
+## [6.1.2] - 2026-10-22
+
+### Fixed
+- Theme audit false positives found on a production app: image and avatar scrims
+  (`absolute inset-0`) are now exempt from the overlay and gradient rules, and pairs are looked up
+  across the previous 3 lines so class lists split over several lines are not flagged.
+
+---
+
 ## [6.1.1] - 2026-10-22
 
 ### Changed

@@ -116,6 +116,9 @@ class SourceModeTest(unittest.TestCase):
                 '<div className="bg-black/60 dark:bg-black/60 border-white/10">\n'
                 '<div className="absolute right-0 mt-2 w-56">\n'
                 '<div className="fixed inset-0 bg-black/50 text-[var(--text)]">\n'
+                '<img className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />\n'
+                '<div className="h-12 bg-brand-500 rounded-full\n'
+                '  flex items-center text-white">\n'
                 '<div className="fixed left-4 right-4 sm:absolute sm:right-0 mt-2 w-56">\n')
             (src / "src" / "socket.test.ts").write_text("navigator.share({})")
             (src / "tests").mkdir()
@@ -135,6 +138,8 @@ class SourceModeTest(unittest.TestCase):
             self.assertEqual(audit["dropdowns"]["samples"], ["source/src/Menu.tsx:2"])
             self.assertEqual(audit["theme_pairs"]["overlay"]["total"], 2)  # scrim counted, not flagged
             self.assertEqual(audit["css_var_theme_tokens"], 1)
+            self.assertEqual(audit["theme_pairs"]["gradient"]["unpaired"], 0)   # image scrim
+            self.assertEqual(audit["theme_pairs"]["text_white"]["unpaired"], 0)  # bg on previous line
             self.assertGreater(summary["signals"]["push_subscribe"], 0)
             self.assertEqual(summary["signals"]["web_share"], 0)
             self.assertGreater(summary["signals"]["reconnect_cfg"], 0)
